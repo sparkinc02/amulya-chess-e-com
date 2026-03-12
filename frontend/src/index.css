@@ -1,0 +1,283 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 37 43% 93%;
+    --foreground: 34 60% 7%;
+
+    --card: 37 53% 96%;
+    --card-foreground: 34 60% 7%;
+
+    --popover: 37 53% 96%;
+    --popover-foreground: 34 60% 7%;
+
+    --primary: 42 62% 55%;
+    --primary-foreground: 34 60% 7%;
+
+    --secondary: 22 33% 18%;
+    --secondary-foreground: 37 43% 93%;
+
+    --muted: 37 20% 88%;
+    --muted-foreground: 34 10% 49%;
+
+    --accent: 37 79% 44%;
+    --accent-foreground: 37 53% 96%;
+
+    --destructive: 350 59% 30%;
+    --destructive-foreground: 37 53% 96%;
+
+    --border: 22 15% 78%;
+    --input: 22 15% 78%;
+    --ring: 42 62% 55%;
+
+    --radius: 0px;
+
+    --sidebar-background: 37 53% 96%;
+    --sidebar-foreground: 34 60% 7%;
+    --sidebar-primary: 42 62% 55%;
+    --sidebar-primary-foreground: 34 60% 7%;
+    --sidebar-accent: 37 20% 88%;
+    --sidebar-accent-foreground: 34 60% 7%;
+    --sidebar-border: 22 15% 78%;
+    --sidebar-ring: 42 62% 55%;
+
+    /* Custom tokens */
+    --gold: 42 62% 55%;
+    --light-gold: 45 76% 73%;
+    --ebony: 34 60% 7%;
+    --walnut: 22 33% 18%;
+    --cream: 37 43% 93%;
+    --ivory: 37 53% 96%;
+    --amber: 37 79% 44%;
+    --bordeaux: 350 59% 30%;
+    --warm-gray: 34 10% 49%;
+  }
+
+  .dark {
+    --background: 34 60% 7%;
+    --foreground: 37 43% 93%;
+
+    --card: 22 33% 14%;
+    --card-foreground: 37 43% 93%;
+
+    --popover: 22 33% 14%;
+    --popover-foreground: 37 43% 93%;
+
+    --primary: 42 62% 55%;
+    --primary-foreground: 34 60% 7%;
+
+    --secondary: 22 33% 22%;
+    --secondary-foreground: 37 43% 93%;
+
+    --muted: 22 20% 20%;
+    --muted-foreground: 34 10% 60%;
+
+    --accent: 37 79% 44%;
+    --accent-foreground: 34 60% 7%;
+
+    --destructive: 350 59% 40%;
+    --destructive-foreground: 37 53% 96%;
+
+    --border: 22 20% 22%;
+    --input: 22 20% 22%;
+    --ring: 42 62% 55%;
+
+    --sidebar-background: 22 33% 12%;
+    --sidebar-foreground: 37 43% 93%;
+    --sidebar-primary: 42 62% 55%;
+    --sidebar-primary-foreground: 34 60% 7%;
+    --sidebar-accent: 22 20% 18%;
+    --sidebar-accent-foreground: 37 43% 93%;
+    --sidebar-border: 22 20% 22%;
+    --sidebar-ring: 42 62% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Playfair Display', serif;
+  }
+
+  .font-body {
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .font-mono {
+    font-family: 'DM Mono', monospace;
+  }
+}
+
+/* ── Admin B&W theme override ─────────────────────────────────── */
+.admin-theme {
+  --background: 0 0% 97%;
+  --foreground: 0 0% 8%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 8%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 8%;
+
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 8%;
+
+  --muted: 0 0% 93%;
+  --muted-foreground: 0 0% 45%;
+
+  --accent: 0 0% 90%;
+  --accent-foreground: 0 0% 8%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 0 0% 84%;
+  --input: 0 0% 84%;
+  --ring: 0 0% 9%;
+
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 0 0% 8%;
+  --sidebar-primary: 0 0% 9%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 93%;
+  --sidebar-accent-foreground: 0 0% 8%;
+  --sidebar-border: 0 0% 84%;
+  --sidebar-ring: 0 0% 9%;
+
+  color-scheme: light;
+}
+
+.admin-theme.dark {
+  --background: 0 0% 7%;
+  --foreground: 0 0% 95%;
+
+  --card: 0 0% 11%;
+  --card-foreground: 0 0% 95%;
+
+  --popover: 0 0% 11%;
+  --popover-foreground: 0 0% 95%;
+
+  --primary: 0 0% 95%;
+  --primary-foreground: 0 0% 7%;
+
+  --secondary: 0 0% 17%;
+  --secondary-foreground: 0 0% 95%;
+
+  --muted: 0 0% 17%;
+  --muted-foreground: 0 0% 60%;
+
+  --accent: 0 0% 17%;
+  --accent-foreground: 0 0% 95%;
+
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 0 0% 80%;
+
+  --sidebar-background: 0 0% 9%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-primary: 0 0% 95%;
+  --sidebar-primary-foreground: 0 0% 7%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-ring: 0 0% 80%;
+
+  color-scheme: dark;
+}
+
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-15px) rotate(2deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Spin rings */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 15s linear infinite;
+}
+
+/* Pulse glow */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px hsl(42 62% 55% / 0.3), 0 0 15px hsl(42 62% 55% / 0.1); }
+  50% { box-shadow: 0 0 15px hsl(42 62% 55% / 0.5), 0 0 30px hsl(42 62% 55% / 0.2); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Confetti */
+@keyframes confetti-fall {
+  0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}

@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+  userName              String
+  phone                 String
+  email                 String    @unique
+  password              String
+  address               Address?
+  role                  String    @default("user")
+  createdAt             DateTime  @default(now())
+  refreshToken          String?
+  refreshTokenExpiresAt DateTime?
+  orders                Order[]
+}
+
+// Embedded type for address
+type Address {
+  addressLine String
+  apartment   String?
+  city        String
+  state       String
+  pincode     String
+}
+
+model Product {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  description    String
+  specifications String?
+  category       String
+  subcategory    String
+  images         String[]
+  price          Float?
+  originalPrice  Int?
+  discount       Int?
+  colors         String[]
+  sizes          String[]
+  stock          Int?
+  isFeatured     Boolean  @default(false)
+  active         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model Order {
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String          @map("userId") @db.ObjectId
+  user            User            @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]
+  shippingAddress ShippingAddress
+  amount          Float
+  subtotal        Float
+  shipping        Float
+  status          OrderStatus     @default(PROCESSING)
+  paymentInfo     PaymentInfo
+  isPaid          Boolean
+  paidAt          DateTime
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  shippingInfo    ShippingInfo?
+}
+
+model FeedBack {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating    Int
+  text      String
+  userName  String
+  email     String
+  createdAt DateTime @default(now())
+}
+
+enum OrderStatus {
+  ORDER_PLACED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+type ShippingInfo {
+  trackingNumber    String
+  estimatedDelivery DateTime
+  note              String?
+}
+
+type OrderItem {
+  productId String
+  quantity  Int
+  size      String
+  color     String
+  price     Float
+  name      String
+  image     String
+}
+
+type ShippingAddress {
+  addressLine String
+  apartment   String?
+  city        String
+  state       String
+  pincode     String
+  phone       String
+}
+
+type PaymentInfo {
+  paymentId String
+  status    String
+  method    String
+}
