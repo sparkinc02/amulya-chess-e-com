@@ -378,3 +378,22 @@ export const deleteProduct = async (req: Request, res: Response) => {
     return;
   }
 };
+export const getCategories = async (_req: Request, res: Response) => {
+  try {
+    const categories = await prisma.product.findMany({
+      select: {
+        category: true,
+      },
+      distinct: ["category"],
+    });
+
+    res.status(200).json({
+      message: "Categories fetched successfully.",
+      data: categories.map((c) => c.category),
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch categories.",
+    });
+  }
+};

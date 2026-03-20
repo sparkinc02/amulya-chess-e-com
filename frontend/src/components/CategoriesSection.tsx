@@ -1,65 +1,142 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import { categories } from '@/data/products';
+import { ArrowRight, MoveRight, Loader2 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
+import { useGetCategories } from '@/services/productService';
+
+// Map of normalized category IDs to emojis for the UI
+const CATEGORY_EMOJIS: Record<string, string> = {
+  "chess-set": "♟",
+  "chess-sets": "♟",
+  "chess-bags": "🎒",
+  "chess-clock": "⏱️",
+  "chess-accessories": "⚙️",
+  "beginner-books": "📚",
+  "middlegame-endgame-books": "📖",
+  "v-subramanian-books": "📙",
+  "rb-ramesh-books": "📘",
+  "demo-boards": "📺",
+  "chess-rental-service": "🤝",
+};
 
 export default function CategoriesSection() {
   const setActiveFilter = useUIStore((s) => s.setActiveFilter);
   const navigate = useNavigate();
 
-  const goToCategory = (cat: string) => {
-    setActiveFilter(cat);
+  // Fetch real categories from backend
+  const { data: categoriesResponse, isLoading } = useGetCategories();
+  const categories = categoriesResponse?.data || [];
+  
+  // Show only top 4 for the home page teaser
+  const mainCategories = categories.slice(0, 4);
+
+  const normalizeId = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
+
+  const goToCategory = (catName: string) => {
+    setActiveFilter(catName);
     navigate('/shop');
   };
 
+  const shopAll = () => {
+    setActiveFilter('All');
+    navigate('/shop');
+  };
+
+  if (isLoading && categories.length === 0) {
+    return (
+      <div className="py-24 flex justify-center items-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
+
+  // If no categories have products yet, hide section or show a message
+  if (categories.length === 0) return null;
+
   return (
-    <section id="categories" className="py-24 px-6">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-4"
-        >
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">Browse</p>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold text-foreground">Our Collections</h2>
-        </motion.div>
+    <section id="categories" className="py-32 px-6 bg-background relative overflow-hidden">
+      {/* Background Decorative Element */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+      
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-2xl"
+          >
+            <p className="font-mono text-xs uppercase tracking-[0.4em] text-primary mb-4 font-bold">Curated Collections</p>
+            <h2 className="font-heading text-4xl md:text-6xl font-bold text-foreground leading-tight">
+              Master the game with <br /> 
+              <span className="text-muted-foreground italic font-light">premium essentials.</span>
+            </h2>
+          </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="font-body text-lg text-muted-foreground text-center max-w-xl mx-auto mb-14"
-        >
-          Explore our curated range of premium chess equipment — from heirloom-quality sets to tournament essentials.
-        </motion.p>
+          <motion.button
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            onClick={shopAll}
+            className="group flex items-center gap-3 font-mono text-xs uppercase tracking-[0.2em] text-foreground hover:text-primary transition-colors pb-2 border-b border-border hover:border-primary shrink-0 h-fit"
+          >
+            Explore All Collections <MoveRight size={16} className="group-hover:translate-x-2 transition-transform" />
+          </motion.button>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((cat, i) => (
-            <motion.button
-              key={cat.name}
-              onClick={() => goToCategory(cat.name)}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              whileHover={{ y: -8 }}
-              className="group relative bg-card border border-border p-8 text-left hover:shadow-[0_8px_30px_rgba(212,168,67,0.12)] transition-all duration-300"
-            >
-              <div className="flex items-start justify-between mb-6">
-                <span className="text-5xl block">{cat.emoji}</span>
-                <ArrowRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mt-2" />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-card-foreground mb-1">{cat.name}</h3>
-              <p className="font-mono text-xs text-muted-foreground">{cat.count} products</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+          {mainCategories.map((cat, i) => {
+            const catId = normalizeId(cat);
+            return (
+              <motion.div
+                key={cat}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+              >
+                <button
+                  onClick={() => goToCategory(cat)}
+                  className="group relative w-full aspect-[4/5] bg-card border border-border overflow-hidden flex flex-col p-10 text-left hover:border-primary/50 transition-all duration-500"
+                >
+                  {/* Subtle Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  
+                  {/* Visual Content */}
+                  <div className="relative z-10 flex-1">
+                    <span className="text-6xl block mb-8 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500 origin-left">
+                      {CATEGORY_EMOJIS[catId] || "♟"}
+                    </span>
+                    <h3 className="font-heading text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+                      {cat}
+                    </h3>
+                    <p className="font-body text-sm text-muted-foreground leading-relaxed italic opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+                      Handcrafted excellence for your next winning move.
+                    </p>
+                  </div>
 
-              {/* Gold underline on hover */}
-              <div className="absolute bottom-0 left-0 h-[2px] w-full bg-primary scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
-            </motion.button>
-          ))}
+                  <div className="relative z-10 flex items-center justify-between pt-6 border-t border-border group-hover:border-primary/20">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+                      View Collection
+                    </span>
+                    <ArrowRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
+
+                  {/* Animated Corner Accent */}
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 -translate-y-full translate-x-full rotate-45 group-hover:translate-y-[-50%] group-hover:translate-x-[50%] transition-transform duration-700" />
+                </button>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Mobile View All Button */}
+        <div className="mt-12 flex md:hidden justify-center">
+            <button onClick={shopAll} className="w-full py-4 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-widest border border-border">
+                Explore All Collections
+            </button>
         </div>
       </div>
     </section>

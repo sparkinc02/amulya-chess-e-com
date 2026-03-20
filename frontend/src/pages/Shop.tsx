@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, SlidersHorizontal, Grid3X3, LayoutList } from 'lucide-react';
-import { products, filterOptions } from '@/data/products';
+import { Search, SlidersHorizontal, Grid3X3, LayoutList, Loader2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartSidebar from '@/components/CartSidebar';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import ShopProductCard from '@/components/ShopProductCard';
 import { useUIStore } from '@/stores/uiStore';
+import { useGetProducts, useGetCategories } from '@/services/productService';
+import { categories as CATEGORIES_DATA } from '@/data/data';
 
 export default function Shop() {
   const activeFilter = useUIStore((s) => s.activeFilter);
@@ -16,35 +17,36 @@ export default function Shop() {
   const [sortBy, setSortBy] = useState<'default' | 'price-asc' | 'price-desc' | 'rating'>('default');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const filtered = useMemo(() => {
-    let result = activeFilter === 'All'
-      ? products
-      : products.filter((p) => p.category === activeFilter);
+  // Fetch real categories from backend
+  const { data: categoriesResponse } = useGetCategories();
+  const dynamicCategories = categoriesResponse?.data || [];
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
-      );
-    }
+  // Dynamic filter options from category data
+  const filterOptions = useMemo(() => ['All', ...dynamicCategories], [dynamicCategories]);
+
+  // Fetch real products from backend
+  const { data: productsResponse, isLoading, isError } = useGetProducts({
+    category: activeFilter === 'All' ? undefined : activeFilter,
+    query: search.trim() || undefined
+  });
+
+  const productsData = productsResponse?.data || [];
+
+  const filtered = useMemo(() => {
+    let result = [...productsData];
 
     switch (sortBy) {
       case 'price-asc':
-        result = [...result].sort((a, b) => a.price - b.price);
+        result.sort((a, b) => a.price - b.price);
         break;
       case 'price-desc':
-        result = [...result].sort((a, b) => b.price - a.price);
+        result.sort((a, b) => b.price - a.price);
         break;
-      case 'rating':
-        result = [...result].sort((a, b) => b.rating - a.rating);
-        break;
+      // Rating is not yet in backend schema, using default for now
     }
 
     return result;
-  }, [activeFilter, search, sortBy]);
+  }, [productsData, sortBy]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -114,7 +116,6 @@ export default function Shop() {
                   <option value="default">Sort by</option>
                   <option value="price-asc">Price: Low → High</option>
                   <option value="price-desc">Price: High → Low</option>
-                  <option value="rating">Top Rated</option>
                 </select>
               </div>
 
@@ -140,28 +141,42 @@ export default function Shop() {
       {/* Results */}
       <section className="py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          <p className="font-mono text-xs text-muted-foreground mb-6">
-            {filtered.length} product{filtered.length !== 1 ? 's' : ''} found
-          </p>
-
-          {filtered.length === 0 ? (
-            <div className="text-center py-20">
-              <span className="text-5xl block mb-4">♟</span>
-              <p className="font-heading text-xl text-muted-foreground">No products found</p>
-              <p className="font-body text-sm text-muted-foreground mt-2">Try adjusting your search or filter</p>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-32 text-muted-foreground gap-4">
+              <Loader2 className="animate-spin" size={40} />
+              <p className="font-mono text-xs uppercase tracking-widest">Loading Collection...</p>
             </div>
-          ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((product, i) => (
-                <ShopProductCard key={product.id} product={product} index={i} />
-              ))}
+          ) : isError ? (
+            <div className="text-center py-32 text-destructive">
+               <p className="font-heading text-xl">Failed to load products</p>
+               <p className="font-body text-sm mt-2">Please check your connection or try again later.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              {filtered.map((product, i) => (
-                <ShopProductCard key={product.id} product={product} index={i} listView />
-              ))}
-            </div>
+            <>
+              <p className="font-mono text-xs text-muted-foreground mb-6">
+                {filtered.length} product{filtered.length !== 1 ? 's' : ''} found
+              </p>
+
+              {filtered.length === 0 ? (
+                <div className="text-center py-20">
+                  <span className="text-5xl block mb-4">♟</span>
+                  <p className="font-heading text-xl text-muted-foreground">No products found</p>
+                  <p className="font-body text-sm text-muted-foreground mt-2">Try adjusting your search or filter</p>
+                </div>
+              ) : viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filtered.map((product, i) => (
+                    <ShopProductCard key={product.id} product={product} index={i} />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {filtered.map((product, i) => (
+                    <ShopProductCard key={product.id} product={product} index={i} listView />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

@@ -159,7 +159,7 @@ export type Categories = Record<
   {
     name: string;
     id?: string;
-    subcategories?: string[];
+    subcategories: string[];
   }
 >;
 

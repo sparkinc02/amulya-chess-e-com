@@ -15,7 +15,7 @@ export default function CartSidebar() {
   const ship = shipping();
 
   const whatsappLink = () => {
-    const summary = items.map((i) => `${i.emoji} ${i.name} x${i.qty} — ₹${(i.price * i.qty).toLocaleString('en-IN')}`).join('%0A');
+    const summary = items.map((i) => `${i.name} x${i.qty} — ₹${(i.price * i.qty).toLocaleString('en-IN')}`).join('%0A');
     return `https://wa.me/919876543210?text=Hi!%20I'd%20like%20to%20order:%0A${summary}%0A%0ATotal:%20₹${sub.toLocaleString('en-IN')}`;
   };
 
@@ -58,8 +58,12 @@ export default function CartSidebar() {
               ) : (
                 items.map((item) => (
                   <div key={item.id} className="flex gap-4 border-b border-border pb-4">
-                    <div className="w-16 h-16 bg-secondary flex items-center justify-center text-2xl shrink-0">
-                      {item.emoji}
+                    <div className="w-16 h-16 bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-2xl">{item.emoji || "♟"}</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-heading text-sm font-bold truncate">{item.name}</p>
@@ -69,7 +73,11 @@ export default function CartSidebar() {
                           <Minus size={12} />
                         </button>
                         <span className="font-mono text-sm w-6 text-center">{item.qty}</span>
-                        <button onClick={() => updateQty(item.id, item.qty + 1)} className="w-7 h-7 border border-border flex items-center justify-center hover:bg-muted">
+                        <button 
+                          onClick={() => updateQty(item.id, item.qty + 1)} 
+                          disabled={item.qty >= item.stock}
+                          className="w-7 h-7 border border-border flex items-center justify-center hover:bg-muted disabled:opacity-30"
+                        >
                           <Plus size={12} />
                         </button>
                         <button onClick={() => removeItem(item.id)} className="ml-auto text-muted-foreground hover:text-destructive">
@@ -93,8 +101,8 @@ export default function CartSidebar() {
                   <span className="text-muted-foreground">Shipping</span>
                   <span className="text-foreground">{ship === 0 ? 'FREE' : `₹${ship}`}</span>
                 </div>
-                {sub < 999 && (
-                  <p className="font-mono text-[10px] text-primary">Free shipping on orders above ₹999</p>
+                {sub < 5000 && (
+                  <p className="font-mono text-[10px] text-primary">Free shipping on orders above ₹5,000</p>
                 )}
 
                 <button

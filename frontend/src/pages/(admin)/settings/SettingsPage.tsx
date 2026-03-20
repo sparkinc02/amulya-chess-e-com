@@ -292,7 +292,7 @@ export const SettingsPage = () => {
                         </FormItem>
                       )}
                     />
-                    <FormField
+                    {/* <FormField
                       control={form.control}
                       name="notifications.smsNotifications"
                       render={({ field }) => (
@@ -313,7 +313,7 @@ export const SettingsPage = () => {
                           </FormControl>
                         </FormItem>
                       )}
-                    />
+                    /> */}
                   </div>
                   <Separator />
                   <div className="space-y-4">

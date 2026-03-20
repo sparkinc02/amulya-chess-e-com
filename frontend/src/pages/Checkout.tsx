@@ -126,8 +126,12 @@ export default function Checkout() {
                 <h2 className="font-heading text-xl font-bold mb-4">Your Items</h2>
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center gap-4 border border-border p-4 bg-card">
-                    <div className="w-16 h-16 bg-secondary flex items-center justify-center text-2xl shrink-0">
-                      {item.emoji}
+                    <div className="w-16 h-16 bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-2xl">{item.emoji || "♟"}</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-heading text-sm font-bold truncate">{item.name}</p>
@@ -158,9 +162,12 @@ export default function Checkout() {
                     <span className="text-primary">₹{grandTotal().toLocaleString('en-IN')}</span>
                   </div>
                 </div>
+                {subtotal() < 5000 && (
+                  <p className="font-mono text-[10px] text-primary mb-4 text-center">Add ₹{(5000 - subtotal()).toLocaleString()} more for free shipping</p>
+                )}
                 <button
                   onClick={() => setStep(2)}
-                  className="w-full py-3.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="w-full py-3.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-all"
                 >
                   Continue to Delivery
                 </button>

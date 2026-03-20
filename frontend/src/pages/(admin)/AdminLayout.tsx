@@ -28,6 +28,7 @@ import { useSidebar } from "@/components/SidebarProvider";
 import { useLocalStorage } from "@/lib/hooks/hooks";
 import { Toaster } from "sonner";
 import { useAuth } from "@/features/auth/AuthContext";
+import { useGetOrders } from "./orders/orderService";
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -38,6 +39,8 @@ export const AdminLayout = () => {
   const pathname = location.pathname;
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: getOrdersResponse } = useGetOrders();
+  const ordersCount = getOrdersResponse?.data?.length || 0;
 
   // Handle missing SidebarContext provider gracefully if it hasn't been added yet
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -92,7 +95,7 @@ export const AdminLayout = () => {
       icon: ShoppingCart,
       to: "/admin/orders",
       active: pathname.includes("/admin/orders"),
-      badge: 13,
+      badge: ordersCount || 0,
     },
     {
       label: "Customers",
@@ -171,22 +174,7 @@ export const AdminLayout = () => {
         <SidebarContent />
       </aside>
 
-      {/* Mobile Sidebar */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="fixed left-4 top-4 z-40 lg:hidden"
-          >
-            <Menu className="h-4 w-4" />
-            <span className="sr-only">Toggle Menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
+      {/* Main content - Mobile Sidebar is now handled inside header */}
 
       {/* Main content */}
       <div
@@ -195,20 +183,38 @@ export const AdminLayout = () => {
           isOpen ? "lg:ml-64" : "lg:ml-[70px]"
         )}
       >
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6">
-          <div className="hidden lg:block">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={toggle}
-            >
-              <Menu className="h-4 w-4" />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6">
+          <div className="flex items-center gap-2 lg:gap-4">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 lg:hidden"
+                >
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <SidebarContent />
+              </SheetContent>
+            </Sheet>
+
+            <div className="hidden lg:block">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={toggle}
+              >
+                <Menu className="h-4 w-4" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </div>
           </div>
 
-          <div className="flex-1 font-heading font-bold uppercase tracking-wider text-muted-foreground text-sm">
+          <div className="flex-1 font-heading font-bold uppercase tracking-wider text-muted-foreground text-xs sm:text-sm truncate">
              Admin Control Panel
           </div>
 

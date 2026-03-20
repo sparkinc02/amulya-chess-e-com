@@ -4,6 +4,7 @@ import {
   deleteProduct,
   getAllProducts,
   getProduct,
+  getCategories,
 } from "@/controllers/product.controller";
 import { validateBody } from "@/lib/helpers/common.helper";
 import { addProductSchema, updateProductSchema } from "@/lib/schemas/product.schema";
@@ -15,6 +16,7 @@ import express from "express";
 const router = express.Router();
 
 router.get("/", getAllProducts);
+router.get("/categories", getCategories);
 router.get("/:id", getProduct);
 router.post(
   "/",

@@ -43,7 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { productSchema } from "@/lib/schemas/product.schema";
-import { s } from "vite/dist/node/types.d-aGj9QkWt";
+
 type ProductFormData = z.infer<typeof productSchema>
 
 interface CreateAndUpdateProductDialogProps {
@@ -223,7 +223,7 @@ const CreateAndUpdateProductDialog = ({
     const productDataWithImages = {
       ...data,
       images: files,
-    };
+    } as any; // Temporary cast to avoid complex ImageFile vs any[] mismatch in service
 
     if (editingProduct) {
       // Update product logic would go here
@@ -406,7 +406,7 @@ const CreateAndUpdateProductDialog = ({
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent side="bottom" position="popper" sideOffset={4} className="max-h-[220px]">
                             {Object.entries(categories).map(
                               ([key, category]) => (
                                 <SelectItem key={key} value={key}>
@@ -439,7 +439,7 @@ const CreateAndUpdateProductDialog = ({
                               <SelectValue placeholder="Select subcategory" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent side="bottom" position="popper" sideOffset={4} className="max-h-[220px]">
                             {subcategories.map((subcategory) => (
                               <SelectItem key={subcategory} value={subcategory}>
                                 {subcategory}
