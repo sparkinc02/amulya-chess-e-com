@@ -12,13 +12,13 @@ export const hashPassword = async (password: string): Promise<string> => {
 
 export const comparePassword = async (
   plain: string,
-  hash: string
+  hash: string,
 ): Promise<boolean> => {
   return await bcrypt.compare(plain, hash);
 };
 
 export const generateToken = (
-  userId: string
+  userId: string,
 ): string | { error: string; statusCode: number } => {
   if (!JWT_SECRET) {
     return {
@@ -36,7 +36,7 @@ export const generateRefreshToken = (): string => {
 };
 
 export const verifyToken = (
-  token: string
+  token: any,
 ): any | { error: string; statusCode: number } => {
   if (!JWT_SECRET) {
     return {
@@ -53,7 +53,7 @@ export const verifyToken = (
 };
 
 export const verifyRefreshToken = (
-  refreshToken: string
+  refreshToken: string,
 ): boolean | { error: string; statusCode: number } => {
   const isValid: boolean = Boolean(refreshToken && refreshToken.length === 128); // Explicitly cast to boolean
   if (!isValid) {

@@ -1,3 +1,5 @@
+import { ImageFile } from "@/components/ImageUpload";
+
 export interface AuthResponse {
   user: UserData;
   accessToken: string;
@@ -152,20 +154,28 @@ export interface Product {
   isFeatured: boolean;
 }
 
-export type Categories = Record<string, {
-  name: string;
-  id?: string;
-  subcategories?: string[];
-}>;
+export type Categories = Record<
+  string,
+  {
+    name: string;
+    id?: string;
+    subcategories?: string[];
+  }
+>;
 
 export interface BulkAction {
   id: string;
   label: string;
   icon?: any;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  variant?:
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link";
   action: (ids: string[]) => void;
 }
-
 
 export interface CustomerWithStats extends Customer {
   id: string;
@@ -180,7 +190,6 @@ export interface Customer {
   phone: string;
   address: string;
 }
-
 
 export interface OrderWithUser extends Order {
   user: UserData;
@@ -198,4 +207,19 @@ export interface TableFilter {
   type: "select" | "date" | "range" | "search";
   options?: FilterOption[];
   placeholder?: string;
+}
+
+export interface ProductFormValues {
+  name: string;
+  category: string;
+  subcategory: string;
+  price: number;
+  originalPrice: number;
+  description: string;
+  stock: number;
+  colors: string; // Assuming colorsArray is an array of strings
+  sizes: string; // Assuming sizesArray is an array of strings
+  active: boolean;
+  isFeatured: boolean;
+  images: ImageFile[]; // Assuming `files` is an array of File objects
 }

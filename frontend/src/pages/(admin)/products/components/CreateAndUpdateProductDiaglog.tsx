@@ -34,6 +34,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
+import { ImageUpload, ImageFile } from "@/components/ImageUpload";
 import { isAxiosError, AxiosError } from "axios";
 import { ApiResponse, Categories, Product } from "@/lib/types";
 import { Plus, Loader2, Pencil } from "lucide-react";
@@ -42,8 +43,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { productSchema } from "@/lib/schemas/product.schema";
-import { ImageFile, ImageUpload } from "@/components/ImageUpload";
-type ProductFormData = z.infer<typeof productSchema>;
+import { s } from "vite/dist/node/types.d-aGj9QkWt";
+type ProductFormData = z.infer<typeof productSchema>
 
 interface CreateAndUpdateProductDialogProps {
   open: boolean;
@@ -143,9 +144,7 @@ const CreateAndUpdateProductDialog = ({
       });
       if (editingProduct.images && editingProduct.images.length > 0) {
         const existingFiles = editingProduct.images.map((url, index) => {
-          const mockFile = new File([], `image-${index + 1}.jpg`, {
-            type: "image/jpeg",
-          });
+          const mockFile = new File([], `image-${index + 1}.jpg`, { type: "image/jpeg" });
           const imageFile = mockFile as ImageFile;
           imageFile.preview = url;
           imageFile.progress = 100;
@@ -245,6 +244,7 @@ const CreateAndUpdateProductDialog = ({
             setRootError("Something went wrong. Please try again.");
           },
           onSuccess: (response) => {
+
             reset();
             setFiles([]);
             setRootError("");
@@ -269,6 +269,7 @@ const CreateAndUpdateProductDialog = ({
           setRootError("Something went wrong. Please try again.");
         },
         onSuccess: (response) => {
+
           reset();
           setFiles([]);
           setRootError("");
@@ -277,6 +278,8 @@ const CreateAndUpdateProductDialog = ({
       });
     }
   };
+
+
 
   const onInvalid = () => {
     // Switch to the tab with errors when form is invalid
@@ -315,6 +318,7 @@ const CreateAndUpdateProductDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -481,17 +485,14 @@ const CreateAndUpdateProductDialog = ({
                       <FormItem>
                         <FormLabel>Original Price (₹) *</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="0"
+                          <Input 
+                            type="text" 
+                            placeholder="0" 
                             value={field.value}
                             onChange={(e) => {
-                              const value = e.target.value.replace(
-                                /[^\d.]/g,
-                                "",
-                              );
+                              const value = e.target.value.replace(/[^\d.]/g, "");
                               // Allow only one decimal point
-                              const parts = value.split(".");
+                              const parts = value.split('.');
                               if (parts.length > 2) return;
                               field.onChange(value);
                             }}
@@ -510,17 +511,14 @@ const CreateAndUpdateProductDialog = ({
                       <FormItem>
                         <FormLabel>Selling Price (₹) *</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="0"
+                          <Input 
+                            type="text" 
+                            placeholder="0" 
                             value={field.value}
                             onChange={(e) => {
-                              const value = e.target.value.replace(
-                                /[^\d.]/g,
-                                "",
-                              );
+                              const value = e.target.value.replace(/[^\d.]/g, "");
                               // Allow only one decimal point
-                              const parts = value.split(".");
+                              const parts = value.split('.');
                               if (parts.length > 2) return;
                               field.onChange(value);
                             }}
@@ -539,9 +537,9 @@ const CreateAndUpdateProductDialog = ({
                       <FormItem>
                         <FormLabel>Stock Quantity *</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="0"
+                          <Input 
+                            type="text" 
+                            placeholder="0" 
                             value={field.value}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, "");

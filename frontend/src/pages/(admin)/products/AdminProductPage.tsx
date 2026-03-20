@@ -20,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ViewToggle } from "./components/ViewToggle";
 import { AdvanceDataTable } from "./components/AdvanceDataTable";
 import { categories } from "@/data/data";
 import { useState, useMemo, useEffect } from "react";
@@ -39,7 +38,9 @@ import CreateAndUpdateProductDiaglog from "./components/CreateAndUpdateProductDi
 import { toast } from "sonner";
 import { useDeleteProduct } from "./adminProductService";
 import { isAxiosError, AxiosError } from "axios";
-
+import { GET_ALL_PRODUCTS_KEY } from "@/lib/constants";
+import { ViewToggle } from "./components/ViewToggle";
+import { useGetProducts } from "@/lib/commonService";
 export const AdminProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
@@ -49,13 +50,13 @@ export const AdminProductsPage = () => {
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // MOCK DATA HOOK REPLACEMENT
-  const isFetchingProducts = false;
-  const isFetchedProducts = true;
-  const isRefetching = false;
-  const refetch = async () => {};
-  const getProductsResponse = { data: [] as Product[] };
+  const {
+    data: getProductsResponse,
+    isPending: isFetchingProducts,
+    isFetched: isFetchedProducts,
+    refetch,
+    isRefetching,
+  } = useGetProducts();
   useEffect(() => {
     if (getProductsResponse?.data) setProducts(getProductsResponse.data);
   }, [getProductsResponse]);
@@ -129,32 +130,32 @@ export const AdminProductsPage = () => {
           product?.subcategory.toLowerCase().includes(query) ||
           (categories[product.category]?.name || "")
             .toLowerCase()
-            .includes(query)
+            .includes(query),
       );
     }
 
     // Apply other filters
     if (activeFilters.category) {
       filtered = filtered.filter(
-        (product) => product.category === activeFilters.category
+        (product) => product.category === activeFilters.category,
       );
     }
 
     if (activeFilters.maxPrice) {
       filtered = filtered.filter(
-        (product) => product.price <= activeFilters.maxPrice
+        (product) => product.price <= activeFilters.maxPrice,
       );
     }
 
     if (activeFilters.active !== undefined) {
       filtered = filtered.filter(
-        (product) => product.active === activeFilters.active
+        (product) => product.active === activeFilters.active,
       );
     }
 
     if (activeFilters.isFeatured !== undefined) {
       filtered = filtered.filter(
-        (product) => product.isFeatured === activeFilters.isFeatured
+        (product) => product.isFeatured === activeFilters.isFeatured,
       );
     }
 

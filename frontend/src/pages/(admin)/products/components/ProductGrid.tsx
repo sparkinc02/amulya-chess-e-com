@@ -1,7 +1,7 @@
 import { Loader2, Package } from "lucide-react";
+import { AdminProductCard } from "./AdminProductCard";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { AdminProductCard } from "./AdminProductCard";
 
 interface ProductGridProps {
   products: Product[];
