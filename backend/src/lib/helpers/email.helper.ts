@@ -10,22 +10,11 @@ const EMAIL_FROM =
 const APP_NAME = process.env.APP_NAME || "Amulya Chess";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use SSL
+  service: process.env.EMAIL_SERVICE || "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  tls: {
-    // This can help if there are certificate resolution issues in certain environments
-    rejectUnauthorized: false
-  },
-  connectionTimeout: 10000, 
-  greetingTimeout: 10000,
-  socketTimeout: 30000,
-  debug: true, // Keep debug enabled for now
-  logger: true // Keep logger enabled for now
 });
 
 console.log(`[Email] nodemailer transporter initialized with host: smtp.gmail.com, port: 465, secure: true`);
