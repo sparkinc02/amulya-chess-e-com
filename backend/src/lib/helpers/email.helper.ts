@@ -11,20 +11,24 @@ const APP_NAME = process.env.APP_NAME || "Amulya Chess";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587, // Trying 587 as an alternative to 465
-  secure: false, // false for 587
+  port: 465,
+  secure: true, // Use SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  tls: {
+    // This can help if there are certificate resolution issues in certain environments
+    rejectUnauthorized: false
+  },
   connectionTimeout: 10000, 
   greetingTimeout: 10000,
   socketTimeout: 30000,
-  debug: true, // Enable debug
-  logger: true // Enable logging
+  debug: true, // Keep debug enabled for now
+  logger: true // Keep logger enabled for now
 });
 
-console.log(`[Email] nodemailer transporter initialized with host: smtp.gmail.com, port: 587`);
+console.log(`[Email] nodemailer transporter initialized with host: smtp.gmail.com, port: 465, secure: true`);
 
 export interface SendEmailOptions {
   to: string;
@@ -41,8 +45,10 @@ export const sendEmail = async ({
   html,
   attachments,
 }: SendEmailOptions) => {
-  console.log(`[Email] Attempting to send email to ${to} with subject: "${subject}"`);
+  console.log(`[Email] Request to send email to ${to} with subject: "${subject}"`);
+  
   try {
+    console.log(`[Email] Calling transporter.sendMail...`);
     const info = await transporter.sendMail({
       from: `${APP_NAME} <${EMAIL_FROM}>`,
       to,
@@ -51,10 +57,15 @@ export const sendEmail = async ({
       html,
       attachments,
     });
-    console.log(`[Email] Email sent successfully to ${to}. MessageId: ${info.messageId}`);
+    console.log(`[Email] transporter.sendMail completed. MessageId: ${info.messageId}`);
     return info;
-  } catch (error) {
-    console.error(`[Email] Failed to send email to ${to}:`, error);
+  } catch (error: any) {
+    console.error(`[Email] Error caught in sendEmail:`, {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      stack: error.stack
+    });
     throw error;
   }
 };
