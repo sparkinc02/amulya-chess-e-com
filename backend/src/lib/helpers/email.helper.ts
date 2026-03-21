@@ -10,7 +10,9 @@ const EMAIL_FROM =
 const APP_NAME = process.env.APP_NAME || "Amulya Chess";
 
 const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // Use SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
