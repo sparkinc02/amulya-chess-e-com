@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,11 +76,6 @@ export const AdminLayout = () => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
-  useEffect(() => {
-    if (!user || user.role !== 'admin') {
-       navigate("/");
-    }
-  }, [user, navigate]);
 
 
   const routes = [
@@ -102,12 +97,6 @@ export const AdminLayout = () => {
       icon: Users,
       to: "/admin/customers",
       active: pathname.includes("/admin/customers"),
-    },
-    {
-       label: "Settings",
-       icon: Settings,
-       to: "/admin/settings",
-       active: pathname.includes("/admin/settings"),
     },
   ];
 
@@ -236,6 +225,7 @@ export const AdminLayout = () => {
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full">
                         <Avatar className="h-8 w-8 border border-primary/20">
+                            <AvatarImage src={user?.picture} alt={user?.userName} />
                             <AvatarFallback className="bg-primary/10 text-primary">{user?.userName?.slice(0,2).toUpperCase() || 'AD'}</AvatarFallback>
                         </Avatar>
                         <span className="sr-only">Toggle user menu</span>

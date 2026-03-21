@@ -521,6 +521,7 @@ export const googleLogin = async (req: Request, res: Response) => {
           userName: user.name || "Google User",
           password: generatedPassword,
           phone: "GoogleAuthUser",
+          picture: user.picture,
         },
       });
       // Fetch the newly created user with included relations to match standard structure

@@ -19,8 +19,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const { mutateAsync: refreshMutateAsync } = useRefreshUser();
   const { mutate: logoutMutate } = useLogoutUser();
-  const { mutate: refreshMutate } = useRefreshUser();
 
   const [user, setUser] = useState<UserData | null>(() => {
     const stored = localStorage.getItem("user");
@@ -55,28 +55,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser((prev) => prev ? { ...prev, address } : null);
   }, []);
 
-  const refreshToken = useCallback(async () => {
-    refreshMutate(undefined, {
-      onError: (error: Error) => {
-        if (isAxiosError(error)) {
-          const data = (error as AxiosError).response?.data as ApiResponse<void>;
-          if (data?.message) { toast.error(data.message); clearAuth(); return; }
+  const refreshToken = useCallback(async (): Promise<void> => {
+    try {
+      const response = await refreshMutateAsync();
+      if (response.data) {
+        setUser(response.data.user);
+        setAccessToken(response.data.accessToken);
+      }
+    } catch (error: any) {
+      if (isAxiosError(error)) {
+        const data = (error as AxiosError).response?.data as ApiResponse<void>;
+        if (data?.message) {
+          toast.error(data.message);
+          clearAuth();
+          throw error;
         }
-        toast.error("Something went wrong. Please try again.");
-        clearAuth();
-      },
-      onSuccess: (response) => {
-        if (response.data) { setUser(response.data.user); setAccessToken(response.data.accessToken); }
-        toast.success(response.message);
-      },
-    });
-  }, [clearAuth, refreshMutate]);
+      }
+      toast.error("Something went wrong. Please try again.");
+      clearAuth();
+      throw error;
+    }
+  }, [clearAuth, refreshMutateAsync]);
 
   useEffect(() => {
     const initializeAuth = async () => {
-      setIsLoading(true);
-      if (user) await refreshToken();
-      setIsLoading(false);
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setIsLoading(true);
+        try {
+          await refreshToken();
+        } catch (error) {
+          console.error("Auth initialization failed:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
     };
     initializeAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps

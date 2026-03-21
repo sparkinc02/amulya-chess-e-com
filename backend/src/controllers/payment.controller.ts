@@ -210,22 +210,27 @@ export const verifyPayment = async (
         throw new Error("Order calculation failed. Please try again.");
       }
 
-      // 7. Update user address if requested (non-blocking)
-      if (saveInfo) {
+      // 7. Update user profile if requested or missing data (non-blocking)
+      const currentUser = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
+      
+      if (saveInfo || currentUser?.phone === "GoogleAuthUser" || !currentUser?.phone) {
         prisma.user
           .update({
             where: { id: userId },
             data: {
-              address: {
-                addressLine: address.addressLine,
-                apartment: address.apartment || "",
-                city: address.city,
-                state: address.state,
-                pincode: address.pincode,
-              },
+              phone: address.phone, // Update phone number
+              ...(saveInfo && {
+                address: {
+                  addressLine: address.addressLine,
+                  apartment: address.apartment || "",
+                  city: address.city,
+                  state: address.state,
+                  pincode: address.pincode,
+                },
+              }),
             },
           })
-          .catch((e) => console.error("Address save failed:", e));
+          .catch((e) => console.error("User profile update failed:", e));
       }
 
       // 8. Parallel non-blocking emails

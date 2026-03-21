@@ -25,6 +25,7 @@ model User {
   createdAt             DateTime  @default(now())
   refreshToken          String?
   refreshTokenExpiresAt DateTime?
+  picture               String?
   orders                Order[]
 }
 

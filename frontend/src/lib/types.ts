@@ -12,6 +12,7 @@ export interface UserData {
   phone: string;
   email: string;
   role: "user" | "admin";
+  picture?: string;
   address?: {
     addressLine: string;
     apartment?: string;
