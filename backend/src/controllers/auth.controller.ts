@@ -307,9 +307,18 @@ export const forgotPassword = async (req: Request, res: Response) => {
     // 2. Construct reset URL
     const resetUrl = `${process.env.FRONTEND_BASE_URL}/reset-password/${token}`;
     const { html, text } = getPasswordResetEmail(resetUrl);
-    await sendEmail({ to: email, subject: "Reset Your Password", text, html });
-
-    res.json({ message: "Reset link sent to your email." });
+    
+    // 3. Send email
+    try {
+      await sendEmail({ to: email, subject: "Reset Your Password", text, html });
+      res.json({ message: "Reset link sent to your email." });
+    } catch (emailError: any) {
+      console.error("[ForgotPassword] Error sending email:", emailError);
+      res.status(500).json({ 
+        message: "We couldn't send the reset email. Please try again later or contact support.",
+        error: process.env.NODE_ENV === "development" ? emailError.message : undefined
+      });
+    }
     return;
   } catch (error) {
     console.log(error);
@@ -402,12 +411,21 @@ export const sendEmailVerificationOtp = async (req: Request, res: Response) => {
     });
 
     const { html, text } = getOtpEmail(otp);
-    await sendEmail({
-      to: email,
-      subject: "Email Verification - Sai-ram-clothing",
-      text,
-      html,
-    });
+    try {
+      await sendEmail({
+        to: email,
+        subject: "Email Verification - Amulya Chess",
+        text,
+        html,
+      });
+    } catch (emailError: any) {
+      console.error("[SendOtp] Error sending email:", emailError);
+      res.status(500).json({ 
+        message: "We couldn't send the verification code. Please try again later or contact support.",
+        error: process.env.NODE_ENV === "development" ? emailError.message : undefined
+      });
+      return;
+    }
 
     res.status(200).json({
       message: "OTP sent to your email.",

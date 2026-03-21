@@ -15,6 +15,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 30000,
 });
 
 export interface SendEmailOptions {
@@ -32,14 +35,22 @@ export const sendEmail = async ({
   html,
   attachments,
 }: SendEmailOptions) => {
-  await transporter.sendMail({
-    from: `${APP_NAME} <${EMAIL_FROM}>`,
-    to,
-    subject,
-    text,
-    html,
-    attachments,
-  });
+  console.log(`[Email] Attempting to send email to ${to} with subject: "${subject}"`);
+  try {
+    const info = await transporter.sendMail({
+      from: `${APP_NAME} <${EMAIL_FROM}>`,
+      to,
+      subject,
+      text,
+      html,
+      attachments,
+    });
+    console.log(`[Email] Email sent successfully to ${to}. MessageId: ${info.messageId}`);
+    return info;
+  } catch (error) {
+    console.error(`[Email] Failed to send email to ${to}:`, error);
+    throw error;
+  }
 };
 
 // --- Specialized Email Generators ---
