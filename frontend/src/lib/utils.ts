@@ -14,13 +14,18 @@ export function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-export function formatDate(date: string | Date | undefined) {
+export function formatDate(date: string | Date | undefined, includeTime = false) {
   if (!date) return "";
-  return new Intl.DateTimeFormat("en-IN", {
+  const options: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "short",
     day: "numeric",
-  }).format(new Date(date));
+  };
+  if (includeTime) {
+    options.hour = "2-digit";
+    options.minute = "2-digit";
+  }
+  return new Intl.DateTimeFormat("en-IN", options).format(new Date(date));
 }
 
 export function createStructuredProductFormData(data: ProductFormValues) {

@@ -1,22 +1,36 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, MoveRight, Loader2 } from 'lucide-react';
+import { 
+  ArrowRight, 
+  MoveRight, 
+  Loader2, 
+  Crown, 
+  ShoppingBag, 
+  Timer, 
+  Settings, 
+  BookOpen, 
+  Book, 
+  BookText, 
+  Bookmark, 
+  Tv, 
+  Handshake 
+} from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useGetCategories } from '@/services/productService';
 
-// Map of normalized category IDs to emojis for the UI
-const CATEGORY_EMOJIS: Record<string, string> = {
-  "chess-set": "♟",
-  "chess-sets": "♟",
-  "chess-bags": "🎒",
-  "chess-clock": "⏱️",
-  "chess-accessories": "⚙️",
-  "beginner-books": "📚",
-  "middlegame-endgame-books": "📖",
-  "v-subramanian-books": "📙",
-  "rb-ramesh-books": "📘",
-  "demo-boards": "📺",
-  "chess-rental-service": "🤝",
+// Map of normalized category IDs to Lucide icons for the UI
+const CATEGORY_ICONS: Record<string, any> = {
+  "chess-set": Crown,
+  "chess-sets": Crown,
+  "chess-bags": ShoppingBag,
+  "chess-clock": Timer,
+  "chess-accessories": Settings,
+  "beginner-books": BookOpen,
+  "middlegame-endgame-books": Book,
+  "v-subramanian-books": BookText,
+  "rb-ramesh-books": Bookmark,
+  "demo-boards": Tv,
+  "chess-rental-service": Handshake,
 };
 
 export default function CategoriesSection() {
@@ -89,6 +103,7 @@ export default function CategoriesSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
           {mainCategories.map((cat, i) => {
             const catId = normalizeId(cat);
+            const Icon = CATEGORY_ICONS[catId] || Crown;
             return (
               <motion.div
                 key={cat}
@@ -106,9 +121,9 @@ export default function CategoriesSection() {
                   
                   {/* Visual Content */}
                   <div className="relative z-10 flex-1">
-                    <span className="text-6xl block mb-8 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500 origin-left">
-                      {CATEGORY_EMOJIS[catId] || "♟"}
-                    </span>
+                    <div className="mb-8 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500 origin-left">
+                      <Icon size={48} className="text-primary group-hover:text-primary transition-colors" strokeWidth={1.5} />
+                    </div>
                     <h3 className="font-heading text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                       {cat}
                     </h3>

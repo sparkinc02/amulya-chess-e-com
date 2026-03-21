@@ -1,19 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ShoppingBag, CreditCard, Truck } from 'lucide-react';
+import { ArrowLeft, Check, ShoppingBag, CreditCard, Truck, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useCartStore } from '@/stores/cartStore';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { useAuth } from '@/features/auth/AuthContext';
+import { usePlaceOrder, useVerifyPayment } from '@/features/checkout/checkoutService';
+import { loadRazorpayScript } from '@/features/checkout/razorpayService';
+import { toast } from 'sonner';
 
 const paymentMethods = [
-  { id: 'upi', label: 'UPI', icon: '📱' },
-  { id: 'card', label: 'Credit/Debit Card', icon: '💳' },
-  { id: 'netbanking', label: 'Net Banking', icon: '🏦' },
-  { id: 'cod', label: 'Cash on Delivery', icon: '💵' },
-  { id: 'emi', label: 'EMI', icon: '📊' },
+  { id: 'upi', label: 'Razorpay (UPI, Card, etc.)', icon: '💳' },
 ];
 
 interface FormData {
@@ -25,24 +25,158 @@ interface FormData {
   city: string;
   state: string;
   pin: string;
+  saveInfo: boolean;
 }
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const { user, refresh } = useAuth();
   const { items, subtotal, shipping, gst, grandTotal, clearCart } = useCartStore();
   const [step, setStep] = useState(1);
-  const [payment, setPayment] = useState('upi');
   const [orderId, setOrderId] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+  const placeOrderMutation = usePlaceOrder();
+  const verifyPaymentMutation = useVerifyPayment();
 
-  const onSubmit = () => setStep(3);
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>({
+    defaultValues: {
+      fullName: user?.userName || '',
+      email: user?.email || '',
+      phone: user?.phone === 'GoogleAuthUser' ? '' : user?.phone || '',
+      address1: user?.address?.addressLine || '',
+      address2: user?.address?.apartment || '',
+      city: user?.address?.city || '',
+      state: user?.address?.state || '',
+      pin: user?.address?.pincode || '',
+      saveInfo: true
+    }
+  });
 
-  const placeOrder = () => {
-    const id = 'CC-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    setOrderId(id);
-    setStep(4);
-    clearCart();
+      // Pre-fill if user data becomes available after mount
+      useEffect(() => {
+        if (user) {
+          if (user.userName) setValue('fullName', user.userName);
+          if (user.email) setValue('email', user.email);
+          if (user.phone && user.phone !== 'GoogleAuthUser') setValue('phone', user.phone);
+          if (user.address) {
+            setValue('address1', user.address.addressLine);
+            setValue('address2', user.address.apartment || '');
+            setValue('city', user.address.city);
+            setValue('state', user.address.state);
+            setValue('pin', user.address.pincode);
+          }
+        }
+      }, [user, setValue]);
+
+      // Pre-load Razorpay script on mount
+      useEffect(() => {
+        loadRazorpayScript().then(success => {
+          if (!success) console.error("Failed to pre-load Razorpay script");
+        });
+      }, []);
+
+      const [deliveryData, setDeliveryData] = useState<FormData | null>(null);
+
+      const onDeliverySubmit = (data: FormData) => {
+        setDeliveryData(data);
+        setStep(3);
+      };
+
+      const handlePlaceOrder = async () => {
+        if (!deliveryData) return;
+        setIsProcessing(true);
+
+        try {
+          // 1. Create order on backend
+          const res = await placeOrderMutation.mutateAsync({
+            cartItems: items.map(item => ({
+              productId: item.id,
+              quantity: item.qty,
+            })),
+            subtotal: subtotal(),
+            shipping: shipping(),
+            total: grandTotal(),
+            state: deliveryData.state
+          });
+
+          const { razorpayOrderId, key, amount, currency } = res.data;
+          console.log("[Checkout] Key received from backend:", key);
+
+          // 2. Load Razorpay script (as back-up if mount-load failed)
+          const isLoaded = await loadRazorpayScript();
+          if (!isLoaded) {
+            toast.error("Failed to load Razorpay. Please check your internet connection.");
+            setIsProcessing(false);
+            return;
+          }
+
+          // 3. Open Razorpay Overlay
+          const options = {
+            key: key || import.meta.env.VITE_RAZORPAY_KEY_ID,
+            amount: Math.round(amount * 100), // Ensure it's in paise for the overlay if needed? Backend usually sends in rupees
+            currency,
+            name: "Amulya Chess",
+            description: "Order Payment",
+            order_id: razorpayOrderId,
+        handler: async (response: any) => {
+          try {
+            // 4. Verify payment on backend
+            await verifyPaymentMutation.mutateAsync({
+              razorpay_order_id: razorpayOrderId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              cartItems: items.map(item => ({
+                productId: item.id,
+                quantity: item.qty,
+              })),
+              address: {
+                addressLine: deliveryData.address1,
+                apartment: deliveryData.address2,
+                city: deliveryData.city,
+                state: deliveryData.state,
+                pincode: deliveryData.pin,
+                phone: deliveryData.phone
+              },
+              saveInfo: deliveryData.saveInfo,
+              subtotal: subtotal(),
+              shipping: shipping(),
+              total: grandTotal()
+            });
+
+            setOrderId(razorpayOrderId);
+            setStep(4);
+            clearCart();
+            await refresh();
+            toast.success("Payment successful!");
+          } catch (err: any) {
+            toast.error(err.response?.data?.message || "Payment verification failed.");
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: deliveryData.fullName,
+          email: deliveryData.email,
+          contact: deliveryData.phone,
+        },
+        theme: {
+          color: "#d4a341",
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to initiate order. Please try again.");
+      setIsProcessing(false);
+    }
   };
 
   if (items.length === 0 && step !== 4) {
@@ -90,7 +224,6 @@ export default function Checkout() {
 
               <h1 className="font-heading text-3xl md:text-4xl font-bold mb-8">Checkout</h1>
 
-              {/* Step indicator */}
               <div className="flex items-center gap-2 mb-12">
                 {steps.map((s, i) => (
                   <div key={s.num} className="flex items-center gap-2">
@@ -115,7 +248,6 @@ export default function Checkout() {
             </>
           )}
 
-          {/* Step 1: Summary */}
           {step === 1 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -162,9 +294,6 @@ export default function Checkout() {
                     <span className="text-primary">₹{grandTotal().toLocaleString('en-IN')}</span>
                   </div>
                 </div>
-                {subtotal() < 5000 && (
-                  <p className="font-mono text-[10px] text-primary mb-4 text-center">Add ₹{(5000 - subtotal()).toLocaleString()} more for free shipping</p>
-                )}
                 <button
                   onClick={() => setStep(2)}
                   className="w-full py-3.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-all"
@@ -175,37 +304,81 @@ export default function Checkout() {
             </motion.div>
           )}
 
-          {/* Step 2: Delivery form */}
           {step === 2 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <h2 className="font-heading text-xl font-bold mb-6">Delivery Details</h2>
-              <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl mx-auto space-y-5">
-                {[
-                  { name: 'fullName' as const, label: 'Full Name', required: true },
-                  { name: 'email' as const, label: 'Email', required: true },
-                  { name: 'phone' as const, label: 'Phone', required: true },
-                  { name: 'address1' as const, label: 'Address Line 1', required: true },
-                  { name: 'address2' as const, label: 'Address Line 2', required: false },
-                  { name: 'city' as const, label: 'City', required: true },
-                  { name: 'state' as const, label: 'State', required: true },
-                  { name: 'pin' as const, label: 'PIN Code', required: true },
-                ].map((field) => (
-                  <div key={field.name}>
-                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                      {field.label} {field.required && <span className="text-primary">*</span>}
-                    </label>
-                    <input
-                      {...register(field.name, field.required ? { required: `${field.label} is required` } : {})}
-                      className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors"
-                    />
-                    {errors[field.name] && (
-                      <p className="font-mono text-[10px] text-destructive mt-1">{errors[field.name]?.message}</p>
-                    )}
+              <form onSubmit={handleSubmit(onDeliverySubmit)} className="max-w-2xl mx-auto space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="md:col-span-2">
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Full Name <span className="text-primary">*</span></label>
+                    <input {...register('fullName', { required: 'Name is required' })} className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" />
+                    {errors.fullName && <p className="font-mono text-[10px] text-destructive mt-1">{errors.fullName.message}</p>}
                   </div>
-                ))}
+                  <div>
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Email <span className="text-primary">*</span></label>
+                    <input {...register('email', { required: 'Email is required' })} type="email" className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" />
+                    {errors.email && <p className="font-mono text-[10px] text-destructive mt-1">{errors.email.message}</p>}
+                  </div>
+                  <div>
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Phone <span className="text-primary">*</span></label>
+                    <input 
+                      {...register('phone', { 
+                        required: 'Phone is required',
+                        pattern: {
+                          value: /^\d{10}$/,
+                          message: 'Phone must be exactly 10 digits'
+                        }
+                      })} 
+                      type="tel" 
+                      maxLength={10}
+                      className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" 
+                    />
+                    {errors.phone && <p className="font-mono text-[10px] text-destructive mt-1">{errors.phone.message}</p>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Address Line 1 <span className="text-primary">*</span></label>
+                    <input {...register('address1', { required: 'Address is required' })} className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" />
+                    {errors.address1 && <p className="font-mono text-[10px] text-destructive mt-1">{errors.address1.message}</p>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Address Line 2 (Apartment, Suite, etc.)</label>
+                    <input {...register('address2')} className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" />
+                  </div>
+                  <div>
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">City <span className="text-primary">*</span></label>
+                    <input {...register('city', { required: 'City is required' })} className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" />
+                    {errors.city && <p className="font-mono text-[10px] text-destructive mt-1">{errors.city.message}</p>}
+                  </div>
+                  <div>
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">State <span className="text-primary">*</span></label>
+                    <input {...register('state', { required: 'State is required' })} className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" />
+                    {errors.state && <p className="font-mono text-[10px] text-destructive mt-1">{errors.state.message}</p>}
+                  </div>
+                  <div>
+                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">PIN Code <span className="text-primary">*</span></label>
+                    <input 
+                      {...register('pin', { 
+                        required: 'PIN is required',
+                        pattern: {
+                          value: /^\d{6}$/,
+                          message: 'PIN must be exactly 6 digits'
+                        }
+                      })} 
+                      maxLength={6}
+                      className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors" 
+                    />
+                    {errors.pin && <p className="font-mono text-[10px] text-destructive mt-1">{errors.pin.message}</p>}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 py-2">
+                  <input type="checkbox" id="saveInfo" {...register('saveInfo')} className="w-4 h-4 accent-primary" />
+                  <label htmlFor="saveInfo" className="font-mono text-xs text-muted-foreground cursor-pointer">Save this information for next time</label>
+                </div>
+
                 <button
                   type="submit"
                   className="w-full py-3.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors mt-4"
@@ -216,7 +389,6 @@ export default function Checkout() {
             </motion.div>
           )}
 
-          {/* Step 3: Payment */}
           {step === 3 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -226,27 +398,19 @@ export default function Checkout() {
               <h2 className="font-heading text-xl font-bold mb-6">Payment Method</h2>
               <div className="space-y-3 mb-8">
                 {paymentMethods.map((m) => (
-                  <button
+                  <div
                     key={m.id}
-                    onClick={() => setPayment(m.id)}
-                    className={`w-full flex items-center gap-4 p-4 border transition-all text-left ${
-                      payment === m.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
-                    }`}
+                    className="w-full flex items-center gap-4 p-4 border border-primary bg-primary/5 cursor-default"
                   >
                     <span className="text-xl">{m.icon}</span>
                     <span className="font-mono text-sm uppercase tracking-wider">{m.label}</span>
-                    {payment === m.id && (
-                      <div className="ml-auto w-5 h-5 bg-primary flex items-center justify-center">
-                        <Check size={12} className="text-primary-foreground" />
-                      </div>
-                    )}
-                  </button>
+                    <div className="ml-auto w-5 h-5 bg-primary flex items-center justify-center">
+                      <Check size={12} className="text-primary-foreground" />
+                    </div>
+                  </div>
                 ))}
               </div>
-              <p className="font-mono text-[10px] text-muted-foreground mb-6">All payments secured by Razorpay</p>
-
+              
               <div className="bg-card border border-border p-5 mb-6">
                 <div className="flex justify-between font-heading text-lg font-bold">
                   <span>Grand Total</span>
@@ -255,15 +419,22 @@ export default function Checkout() {
               </div>
 
               <button
-                onClick={placeOrder}
-                className="w-full py-4 bg-primary text-primary-foreground font-mono text-sm uppercase tracking-wider hover:opacity-90 transition-opacity"
+                onClick={handlePlaceOrder}
+                disabled={isProcessing}
+                className="w-full py-4 bg-primary text-primary-foreground font-mono text-sm uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Place Order ♟
+                {isProcessing ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Processing Payment...
+                  </>
+                ) : (
+                  <>Place Order ♟</>
+                )}
               </button>
             </motion.div>
           )}
 
-          {/* Step 4: Success */}
           {step === 4 && (
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -274,17 +445,25 @@ export default function Checkout() {
               <div className="w-20 h-20 bg-primary mx-auto flex items-center justify-center mb-8">
                 <Check size={40} className="text-primary-foreground" />
               </div>
-              <h1 className="font-heading text-3xl md:text-4xl font-bold mb-3">Order Placed!</h1>
+              <h1 className="font-heading text-3xl md:text-4xl font-bold mb-3">Order Confirmed!</h1>
               <p className="font-mono text-sm text-muted-foreground mb-1">Order ID: {orderId}</p>
               <p className="font-body text-lg text-muted-foreground mb-8">
                 You'll receive confirmation on WhatsApp & Email
               </p>
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                Continue Shopping
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  to="/profile/orders"
+                  className="px-8 py-3.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  View Your Orders
+                </Link>
+                <Link
+                  to="/shop"
+                  className="px-8 py-3.5 border border-border text-foreground font-mono text-xs uppercase tracking-wider hover:bg-secondary transition-colors"
+                >
+                  Continue Shopping
+                </Link>
+              </div>
             </motion.div>
           )}
         </div>

@@ -237,6 +237,7 @@ export interface InvoiceData {
   }>;
   subtotal: number;
   shipping: number;
+  gst?: number;
   total: number;
   paymentMethod: string;
   status: string;
@@ -614,6 +615,9 @@ const INVOICE_TEMPLATE = `
     <table class="summary-table">
       <tr><td class="label"><b>Subtotal :</b></td><td class="value">₹ {{subtotal}}</td></tr>
       <tr><td class="label"><b>Shipping :</b></td><td class="value">₹ {{shipping}}</td></tr>
+      {{#if gst}}
+      <tr><td class="label"><b>GST (18%) :</b></td><td class="value">₹ {{gst}}</td></tr>
+      {{/if}}
       <tr class="total-row"><td class="label"><b>Total :</b></td><td class="value">₹ {{total}}</td></tr>
       <tr><td class="label"><b>Amount in Words :</b></td><td class="value amount-words">{{amountInWords}}</td></tr>
     </table>
@@ -685,6 +689,7 @@ function mapInvoiceData(
     items,
     subtotal,
     shipping: raw.shipping,
+    gst: raw.gst,
     total,
     amountInWords:
       toWords(Number(total)).replace(/\b\w/g, (c: string) => c.toUpperCase()) +
@@ -707,7 +712,8 @@ export async function generateInvoicePdf(invoice: any): Promise<Buffer> {
 
   // Force Puppeteer to use its own Chromium
   const browser = await puppeteer.launch({
-    executablePath: puppeteer.executablePath(), // <-- Use bundled Chromium
+    executablePath: puppeteer.executablePath(),
+    headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 

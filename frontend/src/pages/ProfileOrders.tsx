@@ -2,21 +2,28 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronRight, PackageX } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
-import { OrderType } from '@/lib/types';
+import { Order } from '@/lib/types';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useEffect } from 'react';
 
 const statusColors: Record<string, string> = {
-  PENDING: 'bg-yellow-900/20 text-yellow-600 border-yellow-600/30',
+  ORDER_PLACED: 'bg-primary/10 text-primary border-primary/30',
   PROCESSING: 'bg-primary/10 text-primary border-primary/30',
   SHIPPED: 'bg-blue-900/20 text-blue-500 border-blue-500/30',
   DELIVERED: 'bg-green-900/20 text-green-500 border-green-500/30',
   CANCELLED: 'bg-destructive/10 text-destructive border-destructive/30',
 };
 
+const formatStatus = (status: string) => {
+  return status
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 const statusBorderColors: Record<string, string> = {
-  PENDING: 'bg-yellow-600',
+  ORDER_PLACED: 'bg-primary',
   PROCESSING: 'bg-primary',
   SHIPPED: 'bg-blue-500',
   DELIVERED: 'bg-green-500',
@@ -26,7 +33,7 @@ const statusBorderColors: Record<string, string> = {
 export default function ProfileOrders() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const orders: OrderType[] = user?.orders || [];
+  const orders: Order[] = user?.orders || [];
 
   useEffect(() => { if (!user) navigate('/login'); }, [user, navigate]);
   if (!user) return null;
@@ -92,14 +99,14 @@ export default function ProfileOrders() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-heading font-bold text-base truncate uppercase tracking-wider text-foreground group-hover:text-primary transition-colors">ORDER #{order.id.slice(-6)}</p>
-                        <p className="font-mono text-xs text-muted-foreground truncate mt-1">{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} · {order.orderItems.length} Element{order.orderItems.length > 1 ? 's' : ''}</p>
+                        <p className="font-mono text-xs text-muted-foreground truncate mt-1">{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} at {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {order.orderItems.length} Element{order.orderItems.length > 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center justify-between sm:justify-end gap-5 pl-14 sm:pl-0 mt-2 sm:mt-0">
                       <div className="flex flex-col sm:items-end gap-1.5">
                         <span className={`font-mono text-[9px] uppercase tracking-widest px-2.5 py-1 box-border border backdrop-blur-sm ${statusColors[order.status] || 'bg-muted/50 text-muted-foreground border-border'}`}>
-                          {order.status}
+                          {formatStatus(order.status)}
                         </span>
                         <span className="font-heading font-bold text-lg whitespace-nowrap">₹{order.amount.toLocaleString('en-IN')}</span>
                       </div>

@@ -128,8 +128,8 @@ export async function validateCartItems(cartItems: CartItem[], state: string) {
       validatedItems.push({
         productId: item.productId,
         quantity: item.quantity,
-        size: item.size,
-        color: item.color,
+        size: item.size || "",
+        color: item.color || "",
         price: product?.price || 0,
         name: product.name,
         image: product.images?.[0] || "",
@@ -138,28 +138,19 @@ export async function validateCartItems(cartItems: CartItem[], state: string) {
     }
   }
 
-  // Shipping calculation
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const normalizedState = state.replace(/-/g, " ").toLowerCase();
-  const isTamilNadu = normalizedState === "tamil nadu";
+  // Shipping calculation (Match frontend: Free above 5000, else 0)
+  const shipping = subtotal >= 5000 ? 0 : 0;
 
-  let shipping = 0;
-  // if (subtotal > 1999) {
-  //   shipping = 0;
-  // } else {
-  // shipping = isTamilNadu ? 100 : 150;
-  // if (itemCount > 2) {
-  //   shipping += (itemCount - 2) * 50;
-  // }
-  shipping = 0;
+  // GST calculation (18%)
+  const gst = Math.round(subtotal * 0.18);
 
-  // }
+  const total = subtotal + shipping + gst;
 
-  const total = subtotal + shipping;
   return {
     orderItems: validatedItems,
     calculatedSubtotal: subtotal,
     calculatedShipping: shipping,
     calculatedTotal: total,
+    calculatedGst: gst,
   };
 }

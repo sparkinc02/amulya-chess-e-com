@@ -1,4 +1,4 @@
-// import { razorpay } from "@/config/razorpay-config";
+import { razorpay } from "@/config/razorpay-config";
 import type { PlaceOrderRequestBody } from "@/lib/types";
 import type { Request, Response } from "express";
 import { validateCartItems } from "@/lib/helpers/common.helper";
@@ -56,14 +56,14 @@ export const placeOrder = async (
       currency: "INR",
       receipt: `receipt_order_${Date.now()}`,
     };
-    // const razorpayOrder = await razorpay.orders.create(options);
+    const razorpayOrder = await razorpay.orders.create(options);
 
     res.status(200).json({
       message: "Order placed successfully. Proceed to payment.",
       data: {
-        // razorpayOrderId: razorpayOrder.id,
-        // amount: Number(razorpayOrder?.amount) / 100,
-        // currency: razorpayOrder.currency,
+        razorpayOrderId: razorpayOrder.id,
+        amount: Number(razorpayOrder?.amount) / 100,
+        currency: razorpayOrder.currency,
         key: process.env.RAZORPAY_KEY_ID,
         orderItems,
       },
@@ -82,6 +82,9 @@ export const getAllOrders = async (req: Request, res: Response) => {
     const orders = await prisma.order.findMany({
       include: {
         user: true,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
     res.status(200).json({
@@ -129,7 +132,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     // Check if order exists
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: orderId as string },
       include: {
         user: true,
       },
@@ -221,17 +224,18 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
 
     // Update the order
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
+    await prisma.order.update({
+      where: { id: orderId as string },
       data: updateData,
     });
 
     // Send email notification if notifyCustomer is true
-    if (notifyCustomer && order.user?.email) {
+    const orderWithUser = order as any;
+    if (notifyCustomer && orderWithUser.user?.email) {
       try {
         const { html, text } = getOrderStatusEmail({
-          customerName: order.user.userName,
-          orderId,
+          customerName: orderWithUser.user.userName,
+          orderId: orderId as string,
           status,
           trackingNumber,
           estimatedDelivery: estimatedDelivery
@@ -240,7 +244,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
           note,
         });
         await sendEmail({
-          to: order.user.email,
+          to: orderWithUser.user.email,
           subject: `Order Status Update - Order #${orderId}`,
           text,
           html,
@@ -263,158 +267,22 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   }
 };
 
-// export const getOrderInvoice = async (req: Request, res: Response) => {
-//   const { orderId } = req.params;
-//   try {
-//     // Fetch order with user
-//     const order = await prisma.order.findUnique({
-//       where: { id: orderId },
-//       include: { user: true },
-//     });
-//     if (!order) {
-//       res.status(404).json({ message: "Order not found" });
-//       return;
-//     }
-//     // Only allow order owner or admin
-//     if (
-//       !req.user ||
-//       (order.userId !== req.user.id && req.user.role !== "admin")
-//     ) {
-//       res.status(403).json({ message: "Not authorized to view this invoice" });
-//       return;
-//     }
-//     // Build invoice data
-//     const invoiceData = {
-//       invoiceNumber: order.id,
-//       orderDate: order.createdAt.toLocaleDateString(),
-//       dueDate: undefined,
-//       company: {
-//         name: BUSINESS_CONFIG.company.name,
-//         address: BUSINESS_CONFIG.company.address,
-//         phone: BUSINESS_CONFIG.company.phone,
-//         email: BUSINESS_CONFIG.company.email,
-//         gst: BUSINESS_CONFIG.company.gst,
-//         logo: BUSINESS_CONFIG.company.logo,
-//       },
-//       customer: {
-//         name: order.user.userName,
-//         email: order.user.email,
-//         address: `${order.shippingAddress.addressLine}${
-//           order.shippingAddress.apartment
-//             ? ", " + order.shippingAddress.apartment
-//             : ""
-//         }, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${
-//           order.shippingAddress.pincode
-//         }`,
-//         phone: order.shippingAddress.phone,
-//       },
-//       items: order.orderItems.map((item: any) => ({
-//         name: item.name,
-//         quantity: item.quantity,
-//         price: item.price,
-//         total: item.price * item.quantity,
-//         size: item.size,
-//         color: item.color,
-//         hsn: item.hsn,
-//         unit: item.unit,
-//         mrp: item.mrp,
-//         rate: item.rate,
-//       })),
-//       subtotal: order.subtotal,
-//       shipping: order.shipping,
-//       total: order.amount,
-//       paymentMethod: order.paymentInfo.method,
-//       status: order.status,
-//     };
-//     const { html, text } = getInvoiceHtmlAndText(invoiceData);
-//     res.status(200).json({ html, text, invoiceData });
-//     return;
-//   } catch (error) {
-//     console.error("Invoice generation failed:", error);
-//     res.status(500).json({ message: "Failed to generate invoice" });
-//     return;
-//   }
-// };
-
-// export const sendOrderInvoiceEmail = async (orderId: string) => {
-//   const order = await prisma.order.findUnique({
-//     where: { id: orderId },
-//     include: { user: true },
-//   });
-//   if (!order) throw new Error("Order not found");
-//   const invoiceData = {
-//     invoiceNumber: order.id,
-//     orderDate: order.createdAt.toLocaleDateString(),
-//     dueDate: undefined,
-//     company: {
-//       name: BUSINESS_CONFIG.company.name,
-//       address: BUSINESS_CONFIG.company.address,
-//       phone: BUSINESS_CONFIG.company.phone,
-//       email: BUSINESS_CONFIG.company.email,
-//       gst: BUSINESS_CONFIG.company.gst,
-//       logo: BUSINESS_CONFIG.company.logo,
-//     },
-//     customer: {
-//       name: order.user.userName,
-//       email: order.user.email,
-//       address: `${order.shippingAddress.addressLine}${
-//         order.shippingAddress.apartment
-//           ? ", " + order.shippingAddress.apartment
-//           : ""
-//       }, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${
-//         order.shippingAddress.pincode
-//       }`,
-//       phone: order.shippingAddress.phone,
-//     },
-//     items: order.orderItems.map((item: any) => ({
-//       name: item.name,
-//       quantity: item.quantity,
-//       price: item.price,
-//       total: item.price * item.quantity,
-//       size: item.size,
-//       color: item.color,
-//       hsn: item.hsn,
-//       unit: item.unit,
-//       mrp: item.mrp,
-//       rate: item.rate,
-//     })),
-//     subtotal: order.subtotal,
-//     shipping: order.shipping,
-//     total: order.amount,
-//     paymentMethod: order.paymentInfo.method,
-//     status: order.status,
-//   };
-//   const { html, text } = getInvoiceHtmlAndText(invoiceData);
-//   await sendEmail({
-//     to: order.user.email,
-//     subject: `Your Invoice for Order #${order.id}`,
-//     text,
-//     html,
-//   });
-// };
-
 // GET /orders/:orderId/invoice/pdf
 export const getOrderInvoicePdf = async (req: Request, res: Response) => {
   const { orderId } = req.params;
   try {
     // Fetch order with user
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: orderId as string },
       include: { user: true },
     });
     if (!order) {
       res.status(404).json({ message: "Order not found" });
       return;
     }
-    // Only allow order owner or admin
-    // if (
-    //   !req.user ||
-    //   (order.userId !== req.user.id && req.user.role !== "admin")
-    // ) {
-    //   res.status(403).json({ message: "Not authorized to view this invoice" });
-    //   return;
-    // }
+    
     // Build invoice data
+    const orderWithAny = order as any;
     const invoiceData = {
       invoiceNumber: order.id,
       orderDate: order.createdAt.toLocaleDateString(),
@@ -428,14 +296,14 @@ export const getOrderInvoicePdf = async (req: Request, res: Response) => {
         logo: BUSINESS_CONFIG.company.logo,
       },
       customer: {
-        name: order.user.userName,
-        email: order.user.email,
-        address: `${order.shippingAddress.addressLine}${order.shippingAddress.apartment
-            ? ", " + order.shippingAddress.apartment
+        name: orderWithAny.user.userName,
+        email: orderWithAny.user.email,
+        address: `${orderWithAny.shippingAddress.addressLine}${ orderWithAny.shippingAddress.apartment
+            ? ", " + orderWithAny.shippingAddress.apartment
             : ""
-          }, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pincode
+          }, ${orderWithAny.shippingAddress.city}, ${orderWithAny.shippingAddress.state} - ${orderWithAny.shippingAddress.pincode
           }`,
-        phone: order.shippingAddress.phone,
+        phone: orderWithAny.shippingAddress.phone,
       },
       items: order.orderItems.map((item: any) => ({
         name: item.name,

@@ -50,7 +50,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   clearCart: () => set({ items: [] }),
   totalItems: () => get().items.reduce((sum, i) => sum + i.qty, 0),
   subtotal: () => get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
-  shipping: () => (get().subtotal() >= 5000 ? 0 : 150), // Updated to match settings in data/data.ts
+  shipping: () => (get().subtotal() >= 5000 ? 0 : 0), // Updated to match settings in data/data.ts
   gst: () => Math.round(get().subtotal() * 0.18),
   grandTotal: () => get().subtotal() + get().shipping() + get().gst(),
 }));

@@ -106,25 +106,32 @@ export default function ShopProductCard({ product, index, listView }: Props) {
                   <span className="font-body text-sm text-muted-foreground line-through">₹{product.originalPrice.toLocaleString('en-IN')}</span>
                 )}
               </div>
-              {cartQty > 0 ? (
-                <div className="flex items-center border border-border" onClick={(e) => e.preventDefault()}>
-                  <button onClick={handleDecrement} className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors"><Minus size={12} /></button>
-                  <span className="w-7 h-7 flex items-center justify-center font-mono text-xs border-x border-border">{cartQty}</span>
+              {stockCount > 0 && (
+                cartQty > 0 ? (
+                  <div className="flex items-center border border-border" onClick={(e) => e.preventDefault()}>
+                    <button onClick={handleDecrement} className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors"><Minus size={12} /></button>
+                    <span className="w-7 h-7 flex items-center justify-center font-mono text-xs border-x border-border">{cartQty}</span>
+                    <button 
+                      onClick={handleIncrement} 
+                      disabled={cartQty >= stockCount}
+                      className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30"
+                    ><Plus size={12} /></button>
+                  </div>
+                ) : (
                   <button 
-                    onClick={handleIncrement} 
-                    disabled={cartQty >= stockCount}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30"
-                  ><Plus size={12} /></button>
-                </div>
-              ) : (
-                <button 
-                  onClick={handleAdd} 
-                  disabled={stockCount === 0}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
-                >
-                  <ShoppingBag size={14} />
-                  {stockCount === 0 ? 'Out of Stock' : 'Add to Cart'}
-                </button>
+                    onClick={handleAdd} 
+                    className="flex items-center gap-2 px-5 py-2.5 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    <ShoppingBag size={14} />
+                    Add to Cart
+                  </button>
+                )
+              )}
+              {stockCount <= 0 && (
+                <span className="font-mono text-[10px] uppercase tracking-widest text-destructive/70 px-3 py-2 border border-destructive/20 bg-destructive/5 flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+                   Out of Stock
+                </span>
               )}
             </div>
           </div>
@@ -185,36 +192,46 @@ export default function ShopProductCard({ product, index, listView }: Props) {
               )}
             </div>
             <AnimatePresence mode="wait">
-              {cartQty > 0 ? (
-                <motion.div
-                  key="qty-controls"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  className="flex items-center border border-border"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <button onClick={handleDecrement} className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors"><Minus size={12} /></button>
-                  <span className="w-7 h-7 flex items-center justify-center font-mono text-xs border-x border-border">{cartQty}</span>
-                  <button 
-                    onClick={handleIncrement} 
-                    disabled={cartQty >= stockCount}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30"
-                  ><Plus size={12} /></button>
-                </motion.div>
+              {stockCount > 0 ? (
+                cartQty > 0 ? (
+                  <motion.div
+                    key="qty-controls"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    className="flex items-center border border-border"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <button onClick={handleDecrement} className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors"><Minus size={12} /></button>
+                    <span className="w-7 h-7 flex items-center justify-center font-mono text-xs border-x border-border">{cartQty}</span>
+                    <button 
+                      onClick={handleIncrement} 
+                      disabled={cartQty >= stockCount}
+                      className="w-7 h-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30"
+                    ><Plus size={12} /></button>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="add-btn"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    onClick={handleAdd}
+                    className="p-2.5 bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                    aria-label="Add to cart"
+                  >
+                    <ShoppingBag size={18} />
+                  </motion.button>
+                )
               ) : (
-                <motion.button
-                  key="add-btn"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  onClick={handleAdd}
-                  disabled={stockCount === 0}
-                  className="p-2.5 bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
-                  aria-label="Add to cart"
+                <motion.span
+                  key="out-of-stock"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="font-mono text-[9px] uppercase tracking-tighter text-destructive/80 font-bold"
                 >
-                  <ShoppingBag size={18} />
-                </motion.button>
+                  Sold Out
+                </motion.span>
               )}
             </AnimatePresence>
           </div>

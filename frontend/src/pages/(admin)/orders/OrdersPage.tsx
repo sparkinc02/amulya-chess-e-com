@@ -269,7 +269,7 @@ export function OrdersPage() {
         return (
           <div className="flex items-center justify-center">
             <span className="whitespace-nowrap">
-              {formatDate(new Date(date).toLocaleDateString())}
+              {formatDate(date, true)}
             </span>
           </div>
         );

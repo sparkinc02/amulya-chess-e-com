@@ -4,7 +4,7 @@ import { validateRazorpaySignature } from "@/lib/helpers/payment.helper";
 import type { VerifyPaymentRequestBody } from "@/lib/types";
 import type { Request, Response } from "express";
 import { prisma } from "@/config/data-source";
-// import { razorpay } from "@/config/razorpay-config";
+import { razorpay } from "@/config/razorpay-config";
 import { REFUND_REASON } from "@/lib/constants/payment.constant";
 import {
   sendEmail,
@@ -80,14 +80,14 @@ export const verifyPayment = async (
     // 5. Verify payment capture status with Razorpay
     let payment;
     try {
-      // payment = await razorpay.payments.fetch(razorpay_payment_id);
+      payment = await razorpay.payments.fetch(razorpay_payment_id);
 
-      // if (payment.status !== "captured") {
-      //   return res.status(400).json({
-      //     message: `Payment not completed. Status: ${payment.status}. No amount has been charged.`,
-      //     actionRequired: "Try the payment again or contact support",
-      //   });
-      // }
+      if (payment.status !== "captured") {
+        return res.status(400).json({
+          message: `Payment not completed. Status: ${payment.status}. No amount has been charged.`,
+          actionRequired: "Try the payment again or contact support",
+        });
+      }
     } catch (error: any) {
       return res.status(500).json({
         message:
@@ -96,11 +96,21 @@ export const verifyPayment = async (
       });
     }
 
+    // Format payment method (e.g., upi -> UPI, card -> Card)
+    const formatMethod = (method: string) => {
+      if (!method) return "Razorpay";
+      if (method.toLowerCase() === "upi") return "UPI";
+      return method.charAt(0).toUpperCase() + method.slice(1).toLowerCase();
+    };
+
+    const paymentMethod = formatMethod(payment.method);
+
     // 6. Process order creation with transaction
-    var orderItems: any[] | undefined,
+    let orderItems: any[] | undefined,
       calculatedSubtotal: number | undefined,
       calculatedShipping: number | undefined,
-      calculatedTotal: number | undefined;
+      calculatedTotal: number | undefined,
+      calculatedGst: number | undefined;
     try {
       const newOrder = await prisma.$transaction(async (tx) => {
         // Validate cart items inside transaction
@@ -115,6 +125,7 @@ export const verifyPayment = async (
         calculatedSubtotal = cartValidation.calculatedSubtotal;
         calculatedShipping = cartValidation.calculatedShipping;
         calculatedTotal = cartValidation.calculatedTotal;
+        calculatedGst = (cartValidation as any).calculatedGst;
 
         // Verify calculated amounts match client amounts
         if (
@@ -168,8 +179,8 @@ export const verifyPayment = async (
         );
 
         // Prepare order items for database
-        const orderItemsForDb = orderItems.map(
-          ({ itemTotal, ...rest }) => rest
+        const orderItemsForDb = (orderItems as any[]).map(
+          ({ itemTotal, ...rest }: any) => rest
         );
 
         // Create order record
@@ -192,7 +203,7 @@ export const verifyPayment = async (
             paymentInfo: {
               paymentId: razorpay_payment_id,
               status: "Paid",
-              method: "Unknown",
+              method: paymentMethod,
             },
             isPaid: true,
             paidAt: new Date(),
@@ -233,203 +244,135 @@ export const verifyPayment = async (
           .catch((e) => console.error("User profile update failed:", e));
       }
 
-      // 8. Parallel non-blocking emails
-      const orderLink = `${process.env.FRONTEND_BASE_URL}/profile?tab=orders`;
-      const estimatedDelivery = new Date(
-        Date.now() + 3 * 24 * 60 * 60 * 1000
-      ).toLocaleDateString();
+      // 8. Post-order processing (Non-blocking)
+      (async () => {
+        try {
+          const orderLink = `${process.env.FRONTEND_BASE_URL}/profile/orders/${newOrder.id}`;
+          const estimatedDelivery = new Date(
+            Date.now() + 3 * 24 * 60 * 60 * 1000
+          ).toLocaleDateString();
 
-      // Build invoice data (moved up to fix linter error)
-      const invoiceData = {
-        invoiceNumber: newOrder.id,
-        orderDate: newOrder.createdAt.toLocaleDateString(),
-        dueDate: undefined,
-        company: {
-          name: BUSINESS_CONFIG.company.name,
-          address: BUSINESS_CONFIG.company.address,
-          phone: BUSINESS_CONFIG.company.phone,
-          email: BUSINESS_CONFIG.company.email,
-          gst: BUSINESS_CONFIG.company.gst,
-          logo: BUSINESS_CONFIG.company.logo,
-        },
-        customer: {
-          name: req.user.name || req.user.email,
-          email: req.user.email,
-          address: `${address.addressLine}${address.apartment ? ", " + address.apartment : ""
-            }, ${address.city}, ${address.state} - ${address.pincode}`,
-          phone: address.phone,
-        },
-        items: orderItems.map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.price * item.quantity,
-          size: item.size,
-          color: item.color,
-          hsn: item.hsn,
-          unit: item.unit,
-          mrp: item.mrp,
-          rate: item.rate,
-        })),
-        subtotal: calculatedSubtotal!,
-        shipping: calculatedShipping!,
-        total: calculatedTotal!,
-        paymentMethod: "Unknown",
-        status: newOrder.status,
-      };
-      const { html: invoiceHtml, text: invoiceText } =
-        getInvoiceHtmlAndText(invoiceData);
-      const pdfBuffer = await generateInvoicePdf(invoiceData);
+          // Build invoice data
+          const invoiceData = {
+            invoiceNumber: newOrder.id,
+            orderDate: newOrder.createdAt.toLocaleDateString(),
+            dueDate: undefined,
+            company: {
+              name: BUSINESS_CONFIG.company.name,
+              address: BUSINESS_CONFIG.company.address,
+              phone: BUSINESS_CONFIG.company.phone,
+              email: BUSINESS_CONFIG.company.email,
+              gst: BUSINESS_CONFIG.company.gst,
+              logo: BUSINESS_CONFIG.company.logo,
+            },
+            customer: {
+              name: req.user!.name || req.user!.email,
+              email: req.user!.email,
+              address: `${address.addressLine}${address.apartment ? ", " + address.apartment : ""
+                }, ${address.city}, ${address.state} - ${address.pincode}`,
+              phone: address.phone,
+            },
+            items: orderItems!.map((item: any) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.price * item.quantity,
+              size: item.size,
+              color: item.color,
+              hsn: item.hsn,
+              unit: item.unit,
+              mrp: item.mrp,
+              rate: item.rate,
+            })),
+            subtotal: calculatedSubtotal!,
+            shipping: calculatedShipping!,
+            gst: calculatedGst,
+            total: calculatedTotal!,
+            paymentMethod,
+            status: newOrder.status,
+          };
 
-      // Improved HTML email for customer
-      const customerEmailHtml = `
-        <div style="background:#f8fafc;padding:32px 0;min-height:100vh;font-family:sans-serif;">
-          <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 2px 12px #0001;padding:32px 24px 24px 24px;">
-            <div style="text-align:center;margin-bottom:24px;">
-              <span style="display:inline-block;font-size:2rem;font-weight:700;color:#ec4899;letter-spacing:1px;">${BUSINESS_CONFIG.company.name
-        }</span>
-            </div>
-            <h2 style="color:#ec4899;margin-bottom:8px;">Thank you for your order!</h2>
-            <p style="font-size:1.1rem;margin-bottom:16px;">Hi <b>${req.user.name || req.user.email
-        }</b>,<br>Your order <strong>#$${newOrder.id
-        }</strong> has been placed successfully.</p>
-            <ul style="padding-left:18px;margin-bottom:16px;">
-              <li><b>Total:</b> <span style="color:#ec4899;">₹${calculatedTotal!}</span></li>
-              <li><b>Estimated Delivery:</b> <span style="color:#ec4899;">${estimatedDelivery}</span></li>
-              <li><b>Shipping Address:</b> <span style="color:#130f40;">${address.addressLine
-        }${address.apartment ? ", " + address.apartment : ""}, ${address.city
-        }, ${address.state} - ${address.pincode}</span></li>
-            </ul>
-            <div style="text-align:center;margin:32px 0;">
-              <a href="${orderLink}" style="background:#ec4899;color:white;padding:12px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:1.1rem;display:inline-block;">Track Order</a>
-            </div>
-            <h3 style="color:#ec4899;margin-bottom:8px;">Order Summary</h3>
-            <table style="border-collapse: collapse; width: 100%;margin-bottom:16px;">
-              <thead>
-                <tr>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Item</th>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Qty</th>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Price</th>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${orderItems
-          .map(
-            (item: any) => `
-                  <tr>
-                    <td style="border: 1px solid #ec4899; padding: 8px;">${item.name
-              }${item.size ? ` (${item.size})` : ""}${item.color ? `, ${item.color}` : ""
-              }</td>
-                    <td style="border: 1px solid #ec4899; padding: 8px; text-align:center;">${item.quantity
-              }</td>
-                    <td style="border: 1px solid #ec4899; padding: 8px;">₹${item.price
-              }</td>
-                    <td style="border: 1px solid #ec4899; padding: 8px;">₹${item.price * item.quantity
-              }</td>
-                  </tr>
-                `
-          )
-          .join("")}
-              </tbody>
-            </table>
-            <p style="color:#6b7280;font-size:0.97rem;margin-bottom:0;">If you have any questions, reply to this email or contact our support team at <a href="mailto:${SUPPORT_CONTACT.EMAIL
-        }" style="color:#ec4899;">${SUPPORT_CONTACT.EMAIL}</a> or call ${SUPPORT_CONTACT.PHONE
-        } (${SUPPORT_CONTACT.BUSINESS_HOURS}).</p>
-            <p style="color: #888; font-size: 12px; margin-top: 16px;">Thank you for choosing us!</p>
-          </div>
-        </div>
-      `;
-
-      // Improved HTML email for admin
-      const adminEmailHtml = `
-        <div style="background:#f8fafc;padding:32px 0;min-height:100vh;font-family:sans-serif;">
-          <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 2px 12px #0001;padding:32px 24px 24px 24px;">
-            <div style="text-align:center;margin-bottom:24px;">
-              <span style="display:inline-block;font-size:2rem;font-weight:700;color:#ec4899;letter-spacing:1px;">${BUSINESS_CONFIG.company.name
-        }</span>
-            </div>
-            <h2 style="color:#ec4899;margin-bottom:8px;">New Order Placed</h2>
-            <ul style="padding-left:18px;margin-bottom:16px;">
-              <li><b>Order ID:</b> <span style="color:#ec4899;">${newOrder.id
-        }</span></li>
-              <li><b>User:</b> ${req.user.email} (ID: ${userId})</li>
-              <li><b>Payment ID:</b> ${razorpay_payment_id}</li>
-              <li><b>Amount:</b> <span style="color:#ec4899;">₹${calculatedTotal!}</span></li>
-              <li><b>Shipping Address:</b> <span style="color:#130f40;">${address.addressLine
-        }${address.apartment ? ", " + address.apartment : ""}, ${address.city
-        }, ${address.state}, ${address.pincode}</span></li>
-              <li><b>Order Time:</b> ${new Date().toLocaleString()}</li>
-            </ul>
-            <h3 style="color:#ec4899;margin-bottom:8px;">Order Items</h3>
-            <table style="border-collapse: collapse; width: 100%;margin-bottom:16px;">
-              <thead>
-                <tr>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Item</th>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Qty</th>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Price</th>
-                  <th style="border: 1px solid #ec4899; padding: 8px; background:#fdf2f8;color:#ec4899;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${orderItems
-          .map(
-            (item: any) => `
-                  <tr>
-                    <td style="border: 1px solid #ec4899; padding: 8px;">${item.name
-              }${item.size ? ` (${item.size})` : ""}${item.color ? `, ${item.color}` : ""
-              }</td>
-                    <td style="border: 1px solid #ec4899; padding: 8px; text-align:center;">${item.quantity
-              }</td>
-                    <td style="border: 1px solid #ec4899; padding: 8px;">₹${item.price
-              }</td>
-                    <td style="border: 1px solid #ec4899; padding: 8px;">₹${item.price * item.quantity
-              }</td>
-                  </tr>
-                `
-          )
-          .join("")}
-              </tbody>
-            </table>
-            <p style="color: #888; font-size: 12px; margin-top: 16px;">Please process the order promptly.</p>
-          </div>
-        </div>
-      `;
-
-      const emailPromises = [
-        sendEmail({
-          to: ADMIN_EMAIL,
-          subject: `New Order Received - #${newOrder.id}`,
-          html: adminEmailHtml,
-          text: `New order #${newOrder.id} placed by ${req.user.email
-            }. Total: ₹${calculatedTotal!}.`,
-        }),
-        sendEmail({
-          to: req.user.email,
-          subject: "Your Order Confirmation & Invoice",
-          html: customerEmailHtml,
-          text: `Thank you for your order #${newOrder.id
-            }. Total: ₹${calculatedTotal!}. Estimated delivery: ${estimatedDelivery}.`,
-          attachments: [
-            {
+          const { html: invoiceHtml, text: invoiceText } = getInvoiceHtmlAndText(invoiceData);
+          
+          let attachments = [];
+          try {
+            const pdfBuffer = await generateInvoicePdf(invoiceData);
+            attachments.push({
               filename: `Invoice-${newOrder.id}.pdf`,
               content: pdfBuffer,
               contentType: "application/pdf",
-            },
-          ],
-        }),
-      ];
-
-      Promise.allSettled(emailPromises).then((results) => {
-        results.forEach((result, i) => {
-          if (result.status === "rejected") {
-            console.error(
-              `Email ${i === 0 ? "admin" : "customer"} failed:`,
-              result.reason
-            );
+            });
+          } catch (pdfErr) {
+            console.error("[Invoice] PDF generation failed, sending email without attachment:", pdfErr);
           }
-        });
-      });
+
+          // Improved HTML email for customer
+          const customerEmailHtml = `
+            <div style="background:#fcfbf8;padding:32px 0;min-height:100vh;font-family:sans-serif;">
+              <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;border:1px solid #d4a341;box-shadow:0 2px 12px #0001;padding:32px 32px 24px 32px;color:#3d2b1f;">
+                <div style="text-align:center;margin-bottom:24px;">
+                  <span style="display:inline-block;font-size:2rem;font-weight:700;color:#d4a341;letter-spacing:1px;font-family:serif;">${BUSINESS_CONFIG.company.name}</span>
+                </div>
+                <h2 style="color:#d4a341;margin-bottom:8px;font-family:serif;">Thank you for your order!</h2>
+                <p style="font-size:1.1rem;margin-bottom:16px;">Hi <b>${req.user!.name || req.user!.email}</b>,<br>Your order <strong>#${newOrder.id}</strong> has been placed successfully.</p>
+                
+                <h3 style="color:#3d2b1f;border-bottom:1px solid #f4eede;padding-bottom:8px;margin-bottom:16px;">Order Summary</h3>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+                  <thead>
+                    <tr style="background:#f4eede; text-align:left;">
+                      <th style="padding:10px; border-bottom:1px solid #d4a341;">Item</th>
+                      <th style="padding:10px; border-bottom:1px solid #d4a341;">Qty</th>
+                      <th style="padding:10px; border-bottom:1px solid #d4a341; text-align:right;">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${orderItems!.map((item: any) => `
+                      <tr>
+                        <td style="padding:10px; border-bottom:1px solid #fcfbf8;">${item.name}</td>
+                        <td style="padding:10px; border-bottom:1px solid #fcfbf8;">${item.quantity}</td>
+                        <td style="padding:10px; border-bottom:1px solid #fcfbf8; text-align:right;">₹${item.price.toLocaleString('en-IN')}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                  <tfoot>
+                    <tr style="font-weight:bold;">
+                      <td colspan="2" style="padding:15px 10px 5px 10px; text-align:right;">Total Amount:</td>
+                      <td style="padding:15px 10px 5px 10px; text-align:right; color:#d4a341; font-size:1.2rem;">₹${calculatedTotal!.toLocaleString('en-IN')}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+
+                <div style="background:#fcfbf8; border:1px solid #f4eede; padding:20px; border-radius:8px; margin-bottom:24px;">
+                  <p style="margin:0 0 8px 0;"><b>Shipping Address:</b></p>
+                  <p style="margin:0; font-size:0.95rem;">${address.addressLine}${address.apartment ? ", " + address.apartment : ""}, ${address.city}, ${address.state} - ${address.pincode}</p>
+                </div>
+
+                <div style="text-align:center;margin:32px 0;">
+                  <a href="${orderLink}" style="background:#d4a341;color:white;padding:12px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:1.1rem;display:inline-block;">Track Order Details</a>
+                </div>
+                <p style="color:#897a6f;font-size:0.9rem;text-align:center;">If you have any questions, please reply to this email.</p>
+              </div>
+            </div>
+          `;
+
+          await Promise.all([
+            sendEmail({
+              to: ADMIN_EMAIL,
+              subject: `New Order Received - #${newOrder.id}`,
+              text: `New order #${newOrder.id} placed by ${req.user!.email}. Total: ₹${calculatedTotal!}. Detail: ${orderLink}`,
+            }),
+            sendEmail({
+              to: req.user!.email,
+              subject: `Order Confirmation - #${newOrder.id}`,
+              html: customerEmailHtml,
+              text: `Thank you for your order #${newOrder.id}. Total: ₹${calculatedTotal!}. Track here: ${orderLink}`,
+              attachments
+            }),
+          ]);
+        } catch (e) {
+          console.error("[PostOrder] Background processing failed:", e);
+        }
+      })();
 
       // 9. Return success response with performance metrics
       return res.status(201).json({
@@ -442,18 +385,19 @@ export const verifyPayment = async (
         },
       });
     } catch (error: any) {
+      console.error("Order creation transaction failed:", error);
       // 10. Handle transaction failure with automatic refund
 
       try {
-        // const refund = await razorpay.payments.refund(razorpay_payment_id, {
-        //   amount: payment.amount, // Convert to paise
-        //   speed: "normal",
-        //   notes: {
-        //     reason: REFUND_REASON.ORDER_FAILURE,
-        //     userId: userId,
-        //     error: error.message.substring(0, 100),
-        //   },
-        // });
+        const refund = await razorpay.payments.refund(razorpay_payment_id, {
+          amount: payment.amount, // Convert to paise
+          speed: "normal",
+          notes: {
+            reason: REFUND_REASON.ORDER_FAILURE,
+            userId: userId,
+            error: error.message.substring(0, 100),
+          },
+        });
 
         // Improved HTML refund email for customer
         const refundEmailHtml = `
@@ -485,7 +429,7 @@ export const verifyPayment = async (
           message:
             "We couldn't complete your order, but we've initiated your refund",
           details: {
-            // refundId: refund.id,
+            refundId: refund.id,
             amountRefunded: clientTotal ?? 0,
             contact: SUPPORT_CONTACT,
             expectedRefundTime: "5-7 business days",

@@ -70,7 +70,7 @@ export const signup: RequestHandler = async (
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      include: { orders: true },
+      include: { orders: { orderBy: { createdAt: 'desc' } } },
       data: { refreshToken, refreshTokenExpiresAt },
     });
 
@@ -115,7 +115,7 @@ export const login: RequestHandler = async (
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { orders: true },
+      include: { orders: { orderBy: { createdAt: 'desc' } } },
     });
     if (!user) {
       res.status(401).json({
@@ -193,7 +193,7 @@ export const refreshToken: RequestHandler = async (
         refreshToken,
         refreshTokenExpiresAt: { gt: new Date() },
       },
-      include: { orders: true },
+      include: { orders: { orderBy: { createdAt: 'desc' } } },
     });
 
     if (!user) {
@@ -525,7 +525,7 @@ export const googleLogin = async (req: Request, res: Response) => {
 
     let dbUser = await prisma.user.findUnique({
       where: { email: user.email },
-      include: { orders: true },
+      include: { orders: { orderBy: { createdAt: 'desc' } } },
     });
 
     if (!dbUser) {
@@ -545,7 +545,7 @@ export const googleLogin = async (req: Request, res: Response) => {
       // Fetch the newly created user with included relations to match standard structure
       dbUser = (await prisma.user.findUnique({
         where: { id: newUser.id },
-        include: { orders: true },
+        include: { orders: { orderBy: { createdAt: 'desc' } } },
       }))!;
     }
 

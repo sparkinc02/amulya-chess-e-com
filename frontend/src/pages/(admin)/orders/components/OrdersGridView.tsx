@@ -68,7 +68,7 @@ export const OrdersGridView = ({
                         </div>
                         <CardDescription className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
-                            {formatDate(new Date(order.createdAt).toLocaleDateString())}
+                            {formatDate(order.createdAt, true)}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">

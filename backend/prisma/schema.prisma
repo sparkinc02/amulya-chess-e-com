@@ -101,8 +101,8 @@ type ShippingInfo {
 type OrderItem {
   productId String
   quantity  Int
-  size      String
-  color     String
+  size      String?
+  color     String?
   price     Float
   name      String
   image     String

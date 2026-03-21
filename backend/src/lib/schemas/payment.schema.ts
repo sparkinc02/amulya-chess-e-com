@@ -18,22 +18,8 @@ const cartItemsSchema = z.object({
         })
         .int("Quantity must be a whole number.")
         .positive("Quantity must be greater than zero."),
-    size: z
-        .string({
-            required_error: "Size is required.",
-            invalid_type_error: "Size must be a string.",
-        })
-        .min(1, "Size cannot be empty.")
-        .max(20, "Size cannot exceed 20 characters.")
-        .trim(),
-    color: z
-        .string({
-            required_error: "Color is required.",
-            invalid_type_error: "Color must be a string.",
-        })
-        .min(1, "Color cannot be empty.")
-        .max(30, "Color cannot exceed 30 characters.")
-        .trim(),
+    size: z.string().optional(),
+    color: z.string().optional(),
 });
 
 // --- Address Schema ---

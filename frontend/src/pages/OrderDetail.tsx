@@ -2,22 +2,32 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Check, Package, Truck, MapPin, CreditCard } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
+import { Badge } from '@/components/ui/badge';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useEffect } from 'react';
 
 const statusBannerStyles: Record<string, string> = {
-  Processing: 'bg-primary/10 border-b-2 border-primary',
-  'In Transit': 'bg-[rgba(45,106,79,0.12)] border-b-2 border-[#2D6A4F]',
-  Delivered: 'bg-[rgba(45,106,79,0.2)] border-b-2 border-[#2D6A4F]',
-  Cancelled: 'bg-destructive/10 border-b-2 border-destructive',
+  ORDER_PLACED: 'bg-primary/10 border-b-2 border-primary',
+  PROCESSING: 'bg-primary/10 border-b-2 border-primary',
+  SHIPPED: 'bg-[rgba(45,106,79,0.12)] border-b-2 border-[#2D6A4F]',
+  DELIVERED: 'bg-[rgba(45,106,79,0.2)] border-b-2 border-[#2D6A4F]',
+  CANCELLED: 'bg-destructive/10 border-b-2 border-destructive',
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
-  Processing: <Package size={22} />,
-  'In Transit': <Truck size={22} />,
-  Delivered: <Check size={22} />,
-  Cancelled: <span className="text-xl">✕</span>,
+  ORDER_PLACED: <Package size={22} />,
+  PROCESSING: <Package size={22} />,
+  SHIPPED: <Truck size={22} />,
+  DELIVERED: <Check size={22} />,
+  CANCELLED: <span className="text-xl">✕</span>,
+};
+
+const formatStatus = (status: string) => {
+  return status
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
 export default function OrderDetail() {
@@ -54,8 +64,8 @@ export default function OrderDetail() {
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center gap-4">
           <span className={`${statusBannerStyles[order.status] ? 'text-primary' : 'text-muted-foreground'}`}>{statusIcons[order.status] || <Package size={22} />}</span>
           <div>
-            <p className="font-heading text-xl font-bold uppercase">{order.status}</p>
-            <p className="font-mono text-xs text-muted-foreground">#{order.id.slice(-8)} · {new Date(order.createdAt).toLocaleDateString()}</p>
+            <p className="font-heading text-xl font-bold uppercase">{formatStatus(order.status)}</p>
+            <p className="font-mono text-xs text-muted-foreground">#{order.id.slice(-8)} · {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} at {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
         </div>
       </div>
@@ -71,12 +81,12 @@ export default function OrderDetail() {
             <h2 className="font-heading text-lg font-bold mb-5">Tracking</h2>
             <div className="flex items-start relative pb-4">
               {[
-                { label: 'Order Placed', statusMatch: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'] },
+                { label: 'Order Placed', statusMatch: ['ORDER_PLACED', 'PROCESSING', 'SHIPPED', 'DELIVERED'] },
                 { label: 'Processing', statusMatch: ['PROCESSING', 'SHIPPED', 'DELIVERED'] },
                 { label: 'Shipped', statusMatch: ['SHIPPED', 'DELIVERED'] },
                 { label: 'Delivered', statusMatch: ['DELIVERED'] },
               ].map((step, i, arr) => {
-                const isDone = step.statusMatch.includes(order.status) || order.status === 'COMPLETED';
+                const isDone = step.statusMatch.includes(order.status);
                 const showLine = i < arr.length - 1;
                 const animDelay = i * 0.7; // Base delay for stagger
                 
@@ -189,7 +199,10 @@ export default function OrderDetail() {
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-wider text-primary mb-1">Payment Method</p>
                   <p className="font-body">
-                    {order.paymentInfo?.method || 'RAZORPAY'} <span className={`text-[10px] px-2 py-0.5 ml-2 ${order.isPaid ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-500'}`}>{order.isPaid ? 'PAID' : 'PENDING'}</span>
+                    {order.paymentInfo?.method || 'RAZORPAY'}
+                    <Badge variant={order.isPaid ? "success" : "warning"} className="ml-2">
+                      {order.isPaid ? 'PAID' : 'PENDING'}
+                    </Badge>
                   </p>
                 </div>
               </div>

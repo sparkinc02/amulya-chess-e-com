@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Mail, Clock, Instagram } from 'lucide-react';
 import WhatsAppIcon from '@/components/WhatsAppIcon';
-import { useForm } from 'react-hook-form';
 
 const contactInfo = [
   { icon: MapPin, label: '42, Chess Lane, T. Nagar, Chennai – 600017, Tamil Nadu, India' },
@@ -13,22 +11,7 @@ const contactInfo = [
   { icon: Instagram, label: '@chesscraftindia' },
 ];
 
-interface ContactForm {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-}
-
 export default function ContactSection() {
-  const [sent, setSent] = useState(false);
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactForm>();
-
-  const onSubmit = () => {
-    setSent(true);
-    reset();
-    setTimeout(() => setSent(false), 4000);
-  };
 
   return (
     <section id="contact" className="py-24 px-6 bg-card">
@@ -44,65 +27,23 @@ export default function ContactSection() {
           <h2 className="font-heading text-4xl md:text-5xl font-bold text-card-foreground">Contact Us</h2>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-16">
-          {/* Info */}
+        <div className="max-w-4xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="space-y-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
           >
             {contactInfo.map((item, i) => (
-              <div key={i} className="flex gap-4 items-start">
-                <item.icon size={18} className="text-primary mt-1 shrink-0" />
-                <p className="font-body text-base text-card-foreground">{item.label}</p>
+              <div key={i} className="flex flex-col items-center text-center p-8 bg-background border border-border hover:border-primary/30 transition-colors group">
+                <div className="w-12 h-12 flex items-center justify-center bg-primary/5 rounded-full mb-6 group-hover:bg-primary/10 transition-colors">
+                  <item.icon size={22} className="text-primary" />
+                </div>
+                <p className="font-body text-base text-card-foreground leading-relaxed">{item.label}</p>
               </div>
             ))}
           </motion.div>
-
-          {/* Form */}
-          <motion.form
-            onSubmit={handleSubmit(onSubmit)}
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-1 block">Name *</label>
-              <input {...register('name', { required: 'Name is required' })} className="w-full px-4 py-3 bg-background border border-border font-body text-foreground focus:border-primary focus:outline-none" />
-              {errors.name && <p className="font-mono text-[10px] text-destructive mt-1">{errors.name.message}</p>}
-            </div>
-            <div>
-              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-1 block">Email *</label>
-              <input {...register('email', { required: 'Email is required' })} className="w-full px-4 py-3 bg-background border border-border font-body text-foreground focus:border-primary focus:outline-none" />
-              {errors.email && <p className="font-mono text-[10px] text-destructive mt-1">{errors.email.message}</p>}
-            </div>
-            <div>
-              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-1 block">Subject</label>
-              <select {...register('subject')} className="w-full px-4 py-3 bg-background border border-border font-body text-foreground focus:border-primary focus:outline-none">
-                <option>Order Query</option>
-                <option>Product Info</option>
-                <option>Return Request</option>
-                <option>General</option>
-              </select>
-            </div>
-            <div>
-              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-1 block">Message *</label>
-              <textarea {...register('message', { required: 'Message is required' })} rows={5} className="w-full px-4 py-3 bg-background border border-border font-body text-foreground focus:border-primary focus:outline-none resize-none" />
-              {errors.message && <p className="font-mono text-[10px] text-destructive mt-1">{errors.message.message}</p>}
-            </div>
-
-            {sent && (
-              <p className="font-mono text-xs text-primary">✓ We'll reply within 24 hours!</p>
-            )}
-
-            <button type="submit" className="w-full py-3 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors">
-              Send Message ♟
-            </button>
-          </motion.form>
         </div>
       </div>
     </section>
