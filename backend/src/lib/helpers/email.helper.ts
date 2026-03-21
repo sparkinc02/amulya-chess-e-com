@@ -11,16 +11,20 @@ const APP_NAME = process.env.APP_NAME || "Amulya Chess";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use SSL
+  port: 587, // Trying 587 as an alternative to 465
+  secure: false, // false for 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 10000, // 10 seconds
+  connectionTimeout: 10000, 
   greetingTimeout: 10000,
   socketTimeout: 30000,
+  debug: true, // Enable debug
+  logger: true // Enable logging
 });
+
+console.log(`[Email] nodemailer transporter initialized with host: smtp.gmail.com, port: 587`);
 
 export interface SendEmailOptions {
   to: string;
