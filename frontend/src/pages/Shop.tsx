@@ -1,33 +1,48 @@
-import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Search, SlidersHorizontal, Grid3X3, LayoutList, Loader2 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import CartSidebar from '@/components/CartSidebar';
-import WhatsAppFloat from '@/components/WhatsAppFloat';
-import ShopProductCard from '@/components/ShopProductCard';
-import { useUIStore } from '@/stores/uiStore';
-import { useGetProducts, useGetCategories } from '@/services/productService';
-import { categories as CATEGORIES_DATA } from '@/data/data';
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import {
+  Search,
+  SlidersHorizontal,
+  Grid3X3,
+  LayoutList,
+  Loader2,
+} from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import CartSidebar from "@/components/CartSidebar";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
+import ShopProductCard from "@/components/ShopProductCard";
+import { useUIStore } from "@/stores/uiStore";
+import { useGetProducts, useGetCategories } from "@/services/productService";
+import { categories as CATEGORIES_DATA } from "@/data/data";
 
 export default function Shop() {
   const activeFilter = useUIStore((s) => s.activeFilter);
   const setActiveFilter = useUIStore((s) => s.setActiveFilter);
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'default' | 'price-asc' | 'price-desc' | 'rating'>('default');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<
+    "default" | "price-asc" | "price-desc" | "rating"
+  >("default");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Fetch real categories from backend
   const { data: categoriesResponse } = useGetCategories();
   const dynamicCategories = categoriesResponse?.data || [];
 
   // Dynamic filter options from category data
-  const filterOptions = useMemo(() => ['All', ...dynamicCategories], [dynamicCategories]);
+  const filterOptions = useMemo(
+    () => ["All", ...dynamicCategories],
+    [dynamicCategories],
+  );
 
   // Fetch real products from backend
-  const { data: productsResponse, isLoading, isError } = useGetProducts({
-    category: activeFilter === 'All' ? undefined : activeFilter,
-    query: search.trim() || undefined
+  const {
+    data: productsResponse,
+    isLoading,
+    isError,
+  } = useGetProducts({
+    category: activeFilter === "All" ? undefined : activeFilter,
+    query: search.trim() || undefined,
   });
 
   const productsData = productsResponse?.data || [];
@@ -36,10 +51,10 @@ export default function Shop() {
     let result = [...productsData];
 
     switch (sortBy) {
-      case 'price-asc':
+      case "price-asc":
         result.sort((a, b) => a.price - b.price);
         break;
-      case 'price-desc':
+      case "price-desc":
         result.sort((a, b) => b.price - a.price);
         break;
       // Rating is not yet in backend schema, using default for now
@@ -51,7 +66,6 @@ export default function Shop() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
-      <CartSidebar />
 
       {/* Header */}
       <section className="pt-24 pb-8 px-6 bg-card border-b border-border">
@@ -61,8 +75,12 @@ export default function Shop() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground mb-2">Browse</p>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold text-card-foreground mb-6">The Collection</h1>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground mb-2">
+              Browse
+            </p>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold text-card-foreground mb-6">
+              The Collection
+            </h1>
           </motion.div>
 
           {/* Search Bar */}
@@ -72,7 +90,10 @@ export default function Shop() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="relative max-w-xl mb-8"
           >
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               type="text"
               placeholder="Search products, categories..."
@@ -96,8 +117,8 @@ export default function Shop() {
                   onClick={() => setActiveFilter(f)}
                   className={`font-mono text-xs uppercase tracking-wider px-5 py-2.5 border transition-all ${
                     activeFilter === f
-                      ? 'bg-secondary text-secondary-foreground border-secondary'
-                      : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                      ? "bg-secondary text-secondary-foreground border-secondary"
+                      : "border-border text-muted-foreground hover:border-primary hover:text-primary"
                   }`}
                 >
                   {f}
@@ -107,7 +128,10 @@ export default function Shop() {
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <SlidersHorizontal size={14} className="text-muted-foreground" />
+                <SlidersHorizontal
+                  size={14}
+                  className="text-muted-foreground"
+                />
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
@@ -121,14 +145,14 @@ export default function Shop() {
 
               <div className="hidden md:flex border border-border">
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 transition-colors ${viewMode === "grid" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   <Grid3X3 size={16} />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 transition-colors ${viewMode === "list" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   <LayoutList size={16} />
                 </button>
@@ -144,35 +168,53 @@ export default function Shop() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-32 text-muted-foreground gap-4">
               <Loader2 className="animate-spin" size={40} />
-              <p className="font-mono text-xs uppercase tracking-widest">Loading Collection...</p>
+              <p className="font-mono text-xs uppercase tracking-widest">
+                Loading Collection...
+              </p>
             </div>
           ) : isError ? (
             <div className="text-center py-32 text-destructive">
-               <p className="font-heading text-xl">Failed to load products</p>
-               <p className="font-body text-sm mt-2">Please check your connection or try again later.</p>
+              <p className="font-heading text-xl">Failed to load products</p>
+              <p className="font-body text-sm mt-2">
+                Please check your connection or try again later.
+              </p>
             </div>
           ) : (
             <>
               <p className="font-mono text-xs text-muted-foreground mb-6">
-                {filtered.length} product{filtered.length !== 1 ? 's' : ''} found
+                {filtered.length} product{filtered.length !== 1 ? "s" : ""}{" "}
+                found
               </p>
 
               {filtered.length === 0 ? (
                 <div className="text-center py-20">
                   <span className="text-5xl block mb-4">♟</span>
-                  <p className="font-heading text-xl text-muted-foreground">No products found</p>
-                  <p className="font-body text-sm text-muted-foreground mt-2">Try adjusting your search or filter</p>
+                  <p className="font-heading text-xl text-muted-foreground">
+                    No products found
+                  </p>
+                  <p className="font-body text-sm text-muted-foreground mt-2">
+                    Try adjusting your search or filter
+                  </p>
                 </div>
-              ) : viewMode === 'grid' ? (
+              ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filtered.map((product, i) => (
-                    <ShopProductCard key={product.id} product={product} index={i} />
+                    <ShopProductCard
+                      key={product.id}
+                      product={product}
+                      index={i}
+                    />
                   ))}
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   {filtered.map((product, i) => (
-                    <ShopProductCard key={product.id} product={product} index={i} listView />
+                    <ShopProductCard
+                      key={product.id}
+                      product={product}
+                      index={i}
+                      listView
+                    />
                   ))}
                 </div>
               )}

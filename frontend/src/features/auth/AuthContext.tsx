@@ -1,6 +1,13 @@
 import { ApiResponse, AuthResponse, UserData } from "@/lib/types";
 import { isAxiosError, AxiosError } from "axios";
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useCallback,
+} from "react";
 import { toast } from "sonner";
 import { useLogoutUser, useRefreshUser } from "./authService";
 import { AUTH_TOKEN_REFRESHED } from "@/config/axios";
@@ -13,7 +20,7 @@ interface AuthContextType {
   clearAuth: () => void;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  updateAddress: (address: UserData['address']) => void;
+  updateAddress: (address: UserData["address"]) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +33,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const stored = localStorage.getItem("user");
     return stored ? JSON.parse(stored) : null;
   });
-  const [accessToken, setAccessToken] = useState<string | null>(() => localStorage.getItem("accessToken"));
+  const [accessToken, setAccessToken] = useState<string | null>(() =>
+    localStorage.getItem("accessToken"),
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -51,8 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("accessToken");
   }, []);
 
-  const updateAddress = useCallback((address: UserData['address']) => {
-    setUser((prev) => prev ? { ...prev, address } : null);
+  const updateAddress = useCallback((address: UserData["address"]) => {
+    setUser((prev) => (prev ? { ...prev, address } : null));
   }, []);
 
   const refreshToken = useCallback(async (): Promise<void> => {
@@ -99,29 +108,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handleTokenRefreshed = (e: Event) => {
-      const { user: refreshedUser, accessToken: newToken } = (e as CustomEvent).detail;
+      const { user: refreshedUser, accessToken: newToken } = (e as CustomEvent)
+        .detail;
       if (refreshedUser) setUser(refreshedUser);
       if (newToken) setAccessToken(newToken);
     };
     window.addEventListener(AUTH_TOKEN_REFRESHED, handleTokenRefreshed);
-    return () => window.removeEventListener(AUTH_TOKEN_REFRESHED, handleTokenRefreshed);
+    return () =>
+      window.removeEventListener(AUTH_TOKEN_REFRESHED, handleTokenRefreshed);
   }, []);
 
   const logout = async (): Promise<void> => {
     logoutMutate(undefined, {
       onError: (error: Error) => {
         if (isAxiosError(error)) {
-          const data = (error as AxiosError).response?.data as ApiResponse<AuthResponse>;
-          if (data?.message) { toast.error(data.message); return; }
+          const data = (error as AxiosError).response
+            ?.data as ApiResponse<AuthResponse>;
+          if (data?.message) {
+            toast.error(data.message);
+            return;
+          }
         }
         toast.error("Something went wrong. Please try again.");
       },
-      onSuccess: (response) => { clearAuth(); toast.success(response.message); },
+      onSuccess: (response) => {
+        clearAuth();
+        toast.success(response.message);
+        // Force a full page reload and redirect to home to ensure all states are cleared
+        window.location.replace("/");
+      },
     });
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, isLoading, setAuthData, clearAuth, logout, refresh: refreshToken, updateAddress }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        accessToken,
+        isLoading,
+        setAuthData,
+        clearAuth,
+        logout,
+        refresh: refreshToken,
+        updateAddress,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

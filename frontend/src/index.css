@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  scroll-behavior: smooth;
+}
+
 @layer base {
   :root {
     --background: 37 43% 93%;
@@ -104,22 +108,27 @@
     @apply bg-background text-foreground font-body antialiased;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading;
   }
 }
 
 @layer utilities {
   .font-heading {
-    font-family: 'Playfair Display', serif;
+    font-family: "Playfair Display", serif;
   }
 
   .font-body {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: "Cormorant Garamond", serif;
   }
 
   .font-mono {
-    font-family: 'DM Mono', monospace;
+    font-family: "DM Mono", monospace;
   }
 }
 
@@ -208,8 +217,12 @@
 
 /* Marquee */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee {
@@ -222,8 +235,13 @@
 
 /* Float animation */
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(-1deg); }
-  50% { transform: translateY(-15px) rotate(2deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(2deg);
+  }
 }
 
 .animate-float {
@@ -232,13 +250,21 @@
 
 /* Spin rings */
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes spin-reverse {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
 }
 
 .animate-spin-slow {
@@ -251,8 +277,17 @@
 
 /* Pulse glow */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px hsl(42 62% 55% / 0.3), 0 0 15px hsl(42 62% 55% / 0.1); }
-  50% { box-shadow: 0 0 15px hsl(42 62% 55% / 0.5), 0 0 30px hsl(42 62% 55% / 0.2); }
+  0%,
+  100% {
+    box-shadow:
+      0 0 5px hsl(42 62% 55% / 0.3),
+      0 0 15px hsl(42 62% 55% / 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 15px hsl(42 62% 55% / 0.5),
+      0 0 30px hsl(42 62% 55% / 0.2);
+  }
 }
 
 .animate-pulse-glow {
@@ -261,8 +296,14 @@
 
 /* Confetti */
 @keyframes confetti-fall {
-  0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
 }
 
 /* Custom scrollbar */

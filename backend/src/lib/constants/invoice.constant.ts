@@ -1,12 +1,18 @@
 export const BUSINESS_CONFIG = {
   company: {
     name: "Amulya Chess",
-    address: "Dummy Address for Amulya Chess",
-    phone: "Dummy Phone",
-    email: "support@amulyachess.com",
+    address: "42, Chess Lane, T. Nagar, Chennai – 600017, Tamil Nadu, India",
+    phone: "+91 98765 43210",
+    email: "hello@chesscraftindia.com",
+    supportEmail: "support@amulyachess.com",
     gst: "", // Add if available
     logo: "", // Updated logo URL
     signature: "", // Added signature image URL
+  },
+  pricing: {
+    gstPercentage: 18,
+    shippingThreshold: 5000,
+    shippingCost: 0,
   },
   bankDetails: {
     accountName: "SANDHYA MAHALAKSHMI L",

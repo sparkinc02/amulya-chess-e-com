@@ -234,28 +234,34 @@ export default function Login() {
                   </div>
                 </div>
 
-                <GoogleLogin
-                  onSuccess={(credentialResponse) => {
-                    if (credentialResponse.credential) {
-                      googleLoginMutation.mutate(
-                        { token: credentialResponse.credential },
-                        {
-                          onSuccess: (res) => {
-                            setAuthData(res.data.user, res.data.accessToken);
-                            toast.success("Welcome back! ♛");
-                            navigate("/");
+                <div className="w-full overflow-hidden flex justify-center">
+                  <GoogleLogin
+                    theme="outline"
+                    size="large"
+                    shape="rectangular"
+                    width="400" // Maximum allowed width to ensure it fills the container up to this limit
+                    onSuccess={(credentialResponse) => {
+                      if (credentialResponse.credential) {
+                        googleLoginMutation.mutate(
+                          { token: credentialResponse.credential },
+                          {
+                            onSuccess: (res) => {
+                              setAuthData(res.data.user, res.data.accessToken);
+                              toast.success("Welcome back! ♛");
+                              navigate("/");
+                            },
+                            onError: (err) => {
+                              toast.error(err.message || "Google Login failed");
+                            },
                           },
-                          onError: (err) => {
-                            toast.error(err.message || "Google Login failed");
-                          },
-                        }
-                      );
-                    }
-                  }}
-                  onError={() => {
-                    toast.error("Google authentication failed.");
-                  }}
-                />
+                        );
+                      }
+                    }}
+                    onError={() => {
+                      toast.error("Google authentication failed.");
+                    }}
+                  />
+                </div>
               </form>
 
               <p className="text-center font-body text-sm text-muted-foreground mt-8">

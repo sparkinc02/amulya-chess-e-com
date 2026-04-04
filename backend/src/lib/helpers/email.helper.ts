@@ -1,30 +1,37 @@
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
-import type { SendMailOptions } from "nodemailer";
 import handlebars from "handlebars";
 import { BUSINESS_CONFIG } from "@/lib/constants/invoice.constant";
 import { toWords } from "number-to-words";
+import { Resend } from "resend";
 
-const EMAIL_FROM =
-  process.env.EMAIL_FROM || process.env.EMAIL_USER || "no-reply@example.com";
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_FROM = process.env.RESEND_FROM || "onboarding@resend.dev";
 const APP_NAME = process.env.APP_NAME || "Amulya Chess";
 
+// Nodemailer Config (Current Fallback)
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const EMAIL_FROM = process.env.EMAIL_FROM || EMAIL_USER;
+
 const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || "gmail",
+  service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: EMAIL_USER,
+    pass: EMAIL_PASS,
   },
 });
 
-console.log(`[Email] nodemailer transporter initialized with host: smtp.gmail.com, port: 465, secure: true`);
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
+
+console.log(`[Email] Nodemailer initialized as primary for ${EMAIL_USER}`);
 
 export interface SendEmailOptions {
-  to: string;
+  to: string | string[];
   subject: string;
   text: string;
   html?: string;
-  attachments?: SendMailOptions["attachments"];
+  attachments?: any[];
 }
 
 export const sendEmail = async ({
@@ -34,27 +41,50 @@ export const sendEmail = async ({
   html,
   attachments,
 }: SendEmailOptions) => {
-  console.log(`[Email] Request to send email to ${to} with subject: "${subject}"`);
-  
+  console.log(
+    `[Email] Request to send email to ${to} with subject: "${subject}"`,
+  );
+
+  // --- RESEND (READY FOR FUTURE USE) ---
+  /* 
+  if (resend) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: `${APP_NAME} <${RESEND_FROM}>`,
+        to,
+        subject,
+        text,
+        html,
+        attachments: attachments?.map(att => ({
+          filename: att.filename,
+          content: att.content,
+          path: att.path,
+          cid: att.cid,
+        })),
+      });
+      if (error) throw error;
+      console.log(`[Email] Resend completed. Message ID: ${data?.id}`);
+      return data;
+    } catch (err) {
+      console.error("[Email] Resend failed, using fallback...", err);
+    }
+  }
+  */
+
+  // --- NODEMAILER (ACTIVE) ---
   try {
-    console.log(`[Email] Calling transporter.sendMail...`);
     const info = await transporter.sendMail({
-      from: `${APP_NAME} <${EMAIL_FROM}>`,
-      to,
+      from: `"${APP_NAME}" <${EMAIL_FROM}>`,
+      to: Array.isArray(to) ? to.join(",") : to,
       subject,
       text,
       html,
       attachments,
     });
-    console.log(`[Email] transporter.sendMail completed. MessageId: ${info.messageId}`);
+    console.log(`[Email] Nodemailer sent. MessageId: ${info.messageId}`);
     return info;
   } catch (error: any) {
-    console.error(`[Email] Error caught in sendEmail:`, {
-      message: error.message,
-      code: error.code,
-      command: error.command,
-      stack: error.stack
-    });
+    console.error(`[Email] Error in Nodemailer:`, error);
     throw error;
   }
 };
@@ -78,7 +108,7 @@ export const getOrderConfirmationEmail = (order: {
         <h2 style="color:#d4a341;margin-bottom:8px;font-family:'Playfair Display', serif;">Thank you for your order, ${
           order.customerName
         }!</h2>
-        <p style="font-size:1.1rem;margin-bottom:16px;">Your order <strong>#$${
+        <p style="font-size:1.1rem;margin-bottom:16px;">Your order <strong>#${
           order.orderId
         }</strong> has been placed successfully.</p>
         <p style="font-size:1.1rem;margin-bottom:8px;">Total: <strong style="color:#ec4899;">₹${
@@ -134,11 +164,11 @@ export const getOrderStatusEmail = (order: {
         <p style="font-size:1.1rem;margin-bottom:8px;">Dear ${
           order.customerName
         },</p>
-        <p style="font-size:1.1rem;margin-bottom:8px;">Your order <strong>#$${
+        <p style="font-size:1.1rem;margin-bottom:8px;">Your order <strong>#${
           order.orderId
         }</strong> status has been updated to: <strong style="color:#d4a341;">${
-    order.status
-  }</strong></p>
+          order.status
+        }</strong></p>
         ${
           order.status === "SHIPPED" && order.trackingNumber
             ? `<p style="margin-bottom:8px;">Tracking Number: <strong style="color:#d4a341;">${order.trackingNumber}</strong></p>`
@@ -158,7 +188,7 @@ export const getOrderStatusEmail = (order: {
       </div>
     </div>
   `;
-  const text = `Dear ${order.customerName},\nYour order #$${
+  const text = `Dear ${order.customerName},\nYour order #${
     order.orderId
   } status has been updated to: ${order.status}\n${
     order.trackingNumber ? `Tracking Number: ${order.trackingNumber}\n` : ""
@@ -659,7 +689,7 @@ const INVOICE_TEMPLATE = `
 
 // --- Handlebars Invoice Renderer ---
 function renderInvoiceHtml(
-  data: InvoiceData & { amountInWords: string }
+  data: InvoiceData & { amountInWords: string },
 ): string {
   const template = handlebars.compile(INVOICE_TEMPLATE);
   return template(data);
@@ -667,7 +697,7 @@ function renderInvoiceHtml(
 
 // --- Invoice Data Mapper (MUST match the template fields exactly) ---
 function mapInvoiceData(
-  raw: InvoiceData
+  raw: InvoiceData,
 ): InvoiceData & { amountInWords: string } {
   const config = BUSINESS_CONFIG;
   const items = (raw.items || []).map((item) => ({

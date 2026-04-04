@@ -1,0 +1,4 @@
+fix the nav bar go to cart from any page it should be fixed
+fix the dark mode bug after redirecting to admin page which is in dark mode by default then coming back to home page it is converting to dark mode itself
+remove policies in footer and blog and in contact us page we need to redirect to gmpas with that location when user clicks the addess and phone to redirect to dialer to showing the phone number , and email and other accrodingly
+keep the gst , tax, shippoing cost to be easily changebale by me in central area so if client ask i can easily change it, and also use the support email, number and other relevant details in invoce sent after order is placed properly

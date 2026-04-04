@@ -2,6 +2,7 @@ import { prisma } from "@/config/data-source";
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import type { CartItem } from "../types";
+import { BUSINESS_CONFIG } from "../constants/invoice.constant";
 import type { OrderItem, User } from "generated/prisma";
 
 // Local Product type matching Prisma schema
@@ -104,12 +105,12 @@ export async function validateCartItems(cartItems: CartItem[], state: string) {
         item,
         itemTotal: product.price * item.quantity,
       };
-    })
+    }),
   );
 
   // Handle validation errors
   const firstError = validationResults.find(
-    (r): r is PromiseRejectedResult => r.status === "rejected"
+    (r): r is PromiseRejectedResult => r.status === "rejected",
   );
 
   if (firstError) {
@@ -138,11 +139,16 @@ export async function validateCartItems(cartItems: CartItem[], state: string) {
     }
   }
 
-  // Shipping calculation (Match frontend: Free above 5000, else 0)
-  const shipping = subtotal >= 5000 ? 0 : 0;
+  // Shipping calculation
+  const shipping =
+    subtotal >= BUSINESS_CONFIG.pricing.shippingThreshold
+      ? 0
+      : BUSINESS_CONFIG.pricing.shippingCost;
 
-  // GST calculation (18%)
-  const gst = Math.round(subtotal * 0.18);
+  // GST calculation
+  const gst = Math.round(
+    subtotal * (BUSINESS_CONFIG.pricing.gstPercentage / 100),
+  );
 
   const total = subtotal + shipping + gst;
 

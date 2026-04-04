@@ -21,6 +21,7 @@ import { OrdersPage } from "./pages/(admin)/orders/OrdersPage";
 import CustomersPage from "./pages/(admin)/customers/CustomersPage";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
+import CartSidebar from "./components/CartSidebar";
 
 export const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
         <Sonner position="top-center" />
         <BrowserRouter>
           <ScrollToTop />
+          <CartSidebar />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />

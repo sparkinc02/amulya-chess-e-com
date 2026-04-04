@@ -1,22 +1,22 @@
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  MoveRight, 
-  Loader2, 
-  Crown, 
-  ShoppingBag, 
-  Timer, 
-  Settings, 
-  BookOpen, 
-  Book, 
-  BookText, 
-  Bookmark, 
-  Tv, 
-  Handshake 
-} from 'lucide-react';
-import { useUIStore } from '@/stores/uiStore';
-import { useGetCategories } from '@/services/productService';
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  MoveRight,
+  Loader2,
+  Crown,
+  ShoppingBag,
+  Timer,
+  Settings,
+  BookOpen,
+  Book,
+  BookText,
+  Bookmark,
+  Tv,
+  Handshake,
+} from "lucide-react";
+import { useUIStore } from "@/stores/uiStore";
+import { useGetCategories } from "@/services/productService";
 
 // Map of normalized category IDs to Lucide icons for the UI
 const CATEGORY_ICONS: Record<string, any> = {
@@ -40,20 +40,20 @@ export default function CategoriesSection() {
   // Fetch real categories from backend
   const { data: categoriesResponse, isLoading } = useGetCategories();
   const categories = categoriesResponse?.data || [];
-  
+
   // Show only top 4 for the home page teaser
   const mainCategories = categories.slice(0, 4);
 
-  const normalizeId = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
+  const normalizeId = (name: string) => name.toLowerCase().replace(/\s+/g, "-");
 
   const goToCategory = (catName: string) => {
     setActiveFilter(catName);
-    navigate('/shop');
+    navigate("/shop");
   };
 
   const shopAll = () => {
-    setActiveFilter('All');
-    navigate('/shop');
+    setActiveFilter("All");
+    navigate("/shop");
   };
 
   if (isLoading && categories.length === 0) {
@@ -68,10 +68,13 @@ export default function CategoriesSection() {
   if (categories.length === 0) return null;
 
   return (
-    <section id="categories" className="py-32 px-6 bg-background relative overflow-hidden">
+    <section
+      id="shop"
+      className="py-32 px-6 bg-background relative overflow-hidden"
+    >
       {/* Background Decorative Element */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
-      
+
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <motion.div
@@ -81,26 +84,19 @@ export default function CategoriesSection() {
             transition={{ duration: 0.8 }}
             className="max-w-2xl"
           >
-            <p className="font-mono text-xs uppercase tracking-[0.4em] text-primary mb-4 font-bold">Curated Collections</p>
+            <p className="font-mono text-xs uppercase tracking-[0.4em] text-primary mb-4 font-bold">
+              Curated Collections
+            </p>
             <h2 className="font-heading text-4xl md:text-6xl font-bold text-foreground leading-tight">
-              Master the game with <br /> 
-              <span className="text-muted-foreground italic font-light">premium essentials.</span>
+              Master the game with <br />
+              <span className="text-muted-foreground italic font-light">
+                premium essentials.
+              </span>
             </h2>
           </motion.div>
-
-          <motion.button
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            onClick={shopAll}
-            className="group flex items-center gap-3 font-mono text-xs uppercase tracking-[0.2em] text-foreground hover:text-primary transition-colors pb-2 border-b border-border hover:border-primary shrink-0 h-fit"
-          >
-            Explore All Collections <MoveRight size={16} className="group-hover:translate-x-2 transition-transform" />
-          </motion.button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-16">
           {mainCategories.map((cat, i) => {
             const catId = normalizeId(cat);
             const Icon = CATEGORY_ICONS[catId] || Crown;
@@ -118,11 +114,15 @@ export default function CategoriesSection() {
                 >
                   {/* Subtle Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  
+
                   {/* Visual Content */}
                   <div className="relative z-10 flex-1">
                     <div className="mb-8 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500 origin-left">
-                      <Icon size={48} className="text-primary group-hover:text-primary transition-colors" strokeWidth={1.5} />
+                      <Icon
+                        size={48}
+                        className="text-primary group-hover:text-primary transition-colors"
+                        strokeWidth={1.5}
+                      />
                     </div>
                     <h3 className="font-heading text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                       {cat}
@@ -136,7 +136,10 @@ export default function CategoriesSection() {
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
                       View Collection
                     </span>
-                    <ArrowRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    <ArrowRight
+                      size={18}
+                      className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all"
+                    />
                   </div>
 
                   {/* Animated Corner Accent */}
@@ -147,12 +150,21 @@ export default function CategoriesSection() {
           })}
         </div>
 
-        {/* Mobile View All Button */}
-        <div className="mt-12 flex md:hidden justify-center">
-            <button onClick={shopAll} className="w-full py-4 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-widest border border-border">
-                Explore All Collections
-            </button>
-        </div>
+        {/* Unified Explore All Collections Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="flex justify-center"
+        >
+          <button
+            onClick={shopAll}
+            className="w-full md:w-auto md:px-24 py-5 bg-secondary text-secondary-foreground font-mono text-sm uppercase tracking-[0.3em] border border-border hover:bg-secondary/90 transition-all shadow-xl active:scale-95"
+          >
+            Explore All Collections
+          </button>
+        </motion.div>
       </div>
     </section>
   );

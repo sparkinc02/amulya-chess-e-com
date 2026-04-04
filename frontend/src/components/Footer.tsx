@@ -1,9 +1,14 @@
-import { Instagram } from 'lucide-react';
-import WhatsAppIcon from '@/components/WhatsAppIcon';
+import { Instagram } from "lucide-react";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
+import { BUSINESS_CONFIG } from "@/config/business.config";
 
-const quickLinks = ['Home', 'Shop', 'About Us', 'Contact Us', 'Track Order', 'Blog (coming soon)'];
-const policyLinks = ['Payment Policy', 'Refund Policy', 'Return Policy', 'Privacy Policy', 'Terms of Service'];
-const paymentPills = ['UPI', 'Visa', 'Mastercard', 'RuPay', 'COD', 'EMI'];
+const quickLinks = [
+  { id: "", label: "Home" },
+  { id: "shop", label: "Shop" },
+  { id: "about", label: "About Us" },
+  { id: "contact", label: "Contact Us" },
+];
+const paymentPills = ["UPI", "Visa", "Mastercard", "RuPay", "EMI"];
 
 export default function Footer() {
   return (
@@ -15,13 +20,16 @@ export default function Footer() {
             <span className="text-xl">♛</span>
             <span className="font-heading text-lg font-bold">ChessCraft</span>
           </div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-primary mb-3">Play with Purpose</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-primary mb-3">
+            Play with Purpose
+          </p>
           <p className="font-body text-sm text-secondary-foreground/70 mb-5 leading-relaxed">
-            India's premier destination for handcrafted chess equipment. Every piece tells a story.
+            India's premier destination for handcrafted chess equipment. Every
+            piece tells a story.
           </p>
           <div className="flex gap-3">
             <a
-              href="https://wa.me/919876543210"
+              href={`https://wa.me/${BUSINESS_CONFIG.support.whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-9 h-9 border border-border flex items-center justify-center text-muted-foreground hover:text-[#25D366] hover:border-[#25D366] transition-colors"
@@ -29,7 +37,9 @@ export default function Footer() {
               <WhatsAppIcon size={16} />
             </a>
             <a
-              href="#"
+              href={`https://instagram.com/${BUSINESS_CONFIG.support.instagram}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-9 h-9 border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-colors"
             >
               <Instagram size={16} />
@@ -42,23 +52,12 @@ export default function Footer() {
           <h4 className="font-heading text-sm font-bold mb-4">Quick Links</h4>
           <ul className="space-y-2">
             {quickLinks.map((link) => (
-              <li key={link}>
-                <a href="#" className="font-body text-sm text-secondary-foreground/60 hover:text-primary transition-colors">
-                  {link}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Policies */}
-        <div>
-          <h4 className="font-heading text-sm font-bold mb-4">Policies</h4>
-          <ul className="space-y-2">
-            {policyLinks.map((link) => (
-              <li key={link}>
-                <a href="#policies" className="font-body text-sm text-secondary-foreground/60 hover:text-primary transition-colors">
-                  {link}
+              <li key={link.id}>
+                <a
+                  href={"#" + link.id}
+                  className="font-body text-sm text-secondary-foreground/60 hover:text-primary transition-colors"
+                >
+                  {link.label}
                 </a>
               </li>
             ))}
@@ -69,9 +68,16 @@ export default function Footer() {
         <div>
           <h4 className="font-heading text-sm font-bold mb-4">Contact</h4>
           <div className="space-y-2 font-body text-sm text-secondary-foreground/60">
-            <p>42, Chess Lane, T. Nagar<br />Chennai – 600017</p>
-            <p>+91 98765 43210</p>
-            <p>hello@chesscraftindia.com</p>
+            <p
+              dangerouslySetInnerHTML={{
+                __html: BUSINESS_CONFIG.support.address.replace(
+                  ", Chennai",
+                  "<br />Chennai",
+                ),
+              }}
+            />
+            <p>{BUSINESS_CONFIG.support.phone}</p>
+            <p>{BUSINESS_CONFIG.support.email}</p>
             <p>Mon–Sat · 10AM–7PM IST</p>
           </div>
         </div>
@@ -84,7 +90,10 @@ export default function Footer() {
         </p>
         <div className="flex flex-wrap gap-2">
           {paymentPills.map((p) => (
-            <span key={p} className="font-mono text-[10px] px-3 py-1 border border-border text-secondary-foreground/40">
+            <span
+              key={p}
+              className="font-mono text-[10px] px-3 py-1 border border-border text-secondary-foreground/40"
+            >
               {p}
             </span>
           ))}
