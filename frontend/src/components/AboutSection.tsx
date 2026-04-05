@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Hammer, Crown, Zap, Award } from 'lucide-react';
+import { BUSINESS_CONFIG } from '@/config/business.config';
 
 const values = [
   { icon: Hammer, title: 'Handcrafted Quality', desc: 'Every piece made with care and precision' },
@@ -54,12 +55,12 @@ export default function AboutSection() {
           transition={{ duration: 0.6 }}
         >
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-3">Our Story</p>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold mb-4">About ChessCraft</h2>
+          <h2 className="font-heading text-4xl md:text-5xl font-bold mb-4">About {BUSINESS_CONFIG.company.name}</h2>
           <div className="w-16 h-[2px] bg-primary mb-8" />
 
           <div className="space-y-5 font-body text-lg leading-relaxed text-secondary-foreground/80">
             <p>
-              Founded in 2018, ChessCraft began with a simple vision: to bring the world's finest
+              Founded in 2018, {BUSINESS_CONFIG.company.name} began with a simple vision: to bring the world's finest
               chess equipment to passionate players across India.
             </p>
             <p>

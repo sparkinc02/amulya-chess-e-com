@@ -18,7 +18,9 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xl">♛</span>
-            <span className="font-heading text-lg font-bold">ChessCraft</span>
+            <span className="font-heading text-lg font-bold">
+              {BUSINESS_CONFIG.company.name}
+            </span>
           </div>
           <p className="font-mono text-[10px] uppercase tracking-widest text-primary mb-3">
             Play with Purpose
@@ -86,7 +88,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-border pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="font-mono text-[10px] text-secondary-foreground/40">
-          © 2025 ChessCraft. All rights reserved.
+          © 2025 {BUSINESS_CONFIG.company.name}. All rights reserved.
         </p>
         <div className="flex flex-wrap gap-2">
           {paymentPills.map((p) => (

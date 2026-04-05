@@ -78,7 +78,7 @@ export const reviews = [
   },
   {
     id: 2,
-    text: 'ChessCraft is my go-to for tournament gear. The DGT clock works flawlessly and their customer support is brilliant.',
+    text: 'Amulya Chess is my go-to for tournament gear. The DGT clock works flawlessly and their customer support is brilliant.',
     author: 'Priya Nair', title: 'FIDE Rated Player', city: 'Bangalore', rating: 5, initials: 'PN',
   },
   {

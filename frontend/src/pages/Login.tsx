@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import OTPInput from "@/components/OTPInput";
 import { GoogleLogin } from "@react-oauth/google";
+import { BUSINESS_CONFIG } from "@/config/business.config";
 type View = "login" | "forgot-email" | "forgot-reset";
 
 interface LoginForm {
@@ -57,6 +58,7 @@ export default function Login() {
 
   const loading =
     loginMutation.isPending ||
+    googleLoginMutation.isPending ||
     forgotMutation.isPending ||
     resetMutation.isPending;
 
@@ -158,7 +160,7 @@ export default function Login() {
                 Welcome Back
               </h1>
               <p className="font-body text-muted-foreground mb-8">
-                Sign in to your ChessCraft account
+                Sign in to your {BUSINESS_CONFIG.company.name} account
               </p>
 
               <form onSubmit={handleSubmit(onLogin)} className="space-y-5">
@@ -234,7 +236,15 @@ export default function Login() {
                   </div>
                 </div>
 
-                <div className="w-full overflow-hidden flex justify-center">
+                <div className="w-full overflow-hidden flex justify-center relative">
+                  {googleLoginMutation.isPending && (
+                    <div className="absolute inset-0 z-10 bg-background/80 flex items-center justify-center backdrop-blur-[1px]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-primary">Verifying...</span>
+                      </div>
+                    </div>
+                  )}
                   <GoogleLogin
                     theme="outline"
                     size="large"

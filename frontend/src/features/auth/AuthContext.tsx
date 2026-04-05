@@ -7,6 +7,7 @@ import {
   ReactNode,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { toast } from "sonner";
 import { useLogoutUser, useRefreshUser } from "./authService";
@@ -37,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.getItem("accessToken"),
   );
   const [isLoading, setIsLoading] = useState(true);
+  const isInitializing = useRef(false);
 
   useEffect(() => {
     if (user) localStorage.setItem("user", JSON.stringify(user));
@@ -88,10 +90,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // Prevent multiple initialization calls
+      if (isInitializing.current) return;
+      isInitializing.current = true;
+
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         setIsLoading(true);
         try {
+          // If we already have an accessToken, we might not need to refresh immediately
+          // but calling it ensures the session is still valid in the DB.
           await refreshToken();
         } catch (error) {
           console.error("Auth initialization failed:", error);

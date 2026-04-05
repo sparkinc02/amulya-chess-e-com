@@ -10,6 +10,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import OTPInput from '@/components/OTPInput';
 import { GoogleLogin } from "@react-oauth/google";
+import { BUSINESS_CONFIG } from "@/config/business.config";
 
 interface SignupForm {
   name: string;
@@ -34,7 +35,11 @@ export default function Signup() {
   const [shakeOtp, setShakeOtp] = useState(false);
   const [timer, setTimer] = useState(45);
 
-  const loading = signupMutation.isPending || sendOtpMutation.isPending || verifyMutation.isPending;
+  const loading =
+    signupMutation.isPending ||
+    sendOtpMutation.isPending ||
+    verifyMutation.isPending ||
+    googleLoginMutation.isPending;
 
   const { register, handleSubmit, formState: { errors } } = useForm<SignupForm>();
 
@@ -70,7 +75,7 @@ export default function Signup() {
           {
             onSuccess: (res) => {
               setAuthData(res.data.user, res.data.accessToken);
-              toast.success(`Welcome to ChessCraft, ${formData!.name}! ♛`);
+              toast.success(`Welcome to ${BUSINESS_CONFIG.company.name}, ${formData!.name}! ♛`);
               navigate('/');
             },
             onError: (err) => {
@@ -113,7 +118,7 @@ export default function Signup() {
           {step === 'form' && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <h1 className="font-heading text-3xl font-bold mb-2">Create Account</h1>
-              <p className="font-body text-muted-foreground mb-8">Join the ChessCraft community</p>
+              <p className="font-body text-muted-foreground mb-8">Join the {BUSINESS_CONFIG.company.name} community</p>
 
               <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
                 <div>
@@ -174,28 +179,38 @@ export default function Signup() {
                   <div className="relative flex justify-center"><span className="bg-background px-4 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">or</span></div>
                 </div>
 
-                <GoogleLogin
-                  onSuccess={(credentialResponse) => {
-                    if (credentialResponse.credential) {
-                      googleLoginMutation.mutate(
-                        { token: credentialResponse.credential },
-                        {
-                          onSuccess: (res) => {
-                            setAuthData(res.data.user, res.data.accessToken);
-                            toast.success(`Welcome to ChessCraft, ${res.data.user.userName}! ♛`);
-                            navigate('/');
-                          },
-                          onError: (err) => {
-                            toast.error(err.message || "Google Sign-Up failed");
-                          },
-                        }
-                      );
-                    }
-                  }}
-                  onError={() => {
-                    toast.error("Google authentication failed.");
-                  }}
-                />
+                <div className="w-full overflow-hidden flex justify-center relative">
+                  {googleLoginMutation.isPending && (
+                    <div className="absolute inset-0 z-10 bg-background/80 flex items-center justify-center backdrop-blur-[1px]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-primary">Verifying...</span>
+                      </div>
+                    </div>
+                  )}
+                  <GoogleLogin
+                    onSuccess={(credentialResponse) => {
+                      if (credentialResponse.credential) {
+                        googleLoginMutation.mutate(
+                          { token: credentialResponse.credential },
+                          {
+                            onSuccess: (res) => {
+                              setAuthData(res.data.user, res.data.accessToken);
+                              toast.success(`Welcome to ${BUSINESS_CONFIG.company.name}, ${res.data.user.userName}! ♛`);
+                              navigate('/');
+                            },
+                            onError: (err) => {
+                              toast.error(err.message || "Google Sign-Up failed");
+                            },
+                          }
+                        );
+                      }
+                    }}
+                    onError={() => {
+                      toast.error("Google authentication failed.");
+                    }}
+                  />
+                </div>
               </form>
 
               <p className="text-center font-body text-sm text-muted-foreground mt-8">

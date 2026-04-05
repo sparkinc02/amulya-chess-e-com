@@ -18,6 +18,7 @@ import {
   getOtpEmail,
 } from "@/lib/helpers/email.helper";
 import { OAuth2Client } from "google-auth-library";
+import { getRefreshTokenCookieOptions } from "@/lib/helpers/cookie.helper";
 const MODE = process.env.MODE;
 
 export const signup: RequestHandler = async (
@@ -74,13 +75,11 @@ export const signup: RequestHandler = async (
       data: { refreshToken, refreshTokenExpiresAt },
     });
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: MODE !== "dev", // true in production; false in dev
-      sameSite: MODE !== "dev" ? "none" : "lax",
-      maxAge: AUTH_CONSTANTS.SEVEN_DAYS_VALUE,
-      ...(MODE !== "dev" && { domain: ".onrender.com" }), // only for prod
-    });
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getRefreshTokenCookieOptions()
+    );
 
     res.status(201).json({
       message: `Welcome ${user.userName}! Your account has been created successfully. You are now logged in.`,
@@ -150,12 +149,11 @@ export const login: RequestHandler = async (
       where: { id: user.id },
       data: { refreshToken, refreshTokenExpiresAt },
     });
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: MODE !== "dev", // true in production; false in dev
-      sameSite: MODE !== "dev" ? "none" : "lax",
-      maxAge: AUTH_CONSTANTS.SEVEN_DAYS_VALUE,
-    });
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getRefreshTokenCookieOptions()
+    );
 
     res.status(200).json({
       message: `Welcome back, ${user.userName}! You have been logged in successfully.`,
@@ -223,12 +221,11 @@ export const refreshToken: RequestHandler = async (
       },
     });
 
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: MODE !== "dev", // true in production; false in dev
-      sameSite: MODE !== "dev" ? "none" : "lax",
-      maxAge: AUTH_CONSTANTS.SEVEN_DAYS_VALUE,
-    });
+    res.cookie(
+      "refreshToken",
+      newRefreshToken,
+      getRefreshTokenCookieOptions()
+    );
 
     res.status(200).json({
       message:
@@ -565,12 +562,11 @@ export const googleLogin = async (req: Request, res: Response) => {
       data: { refreshToken, refreshTokenExpiresAt },
     });
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: MODE !== "dev",
-      sameSite: MODE !== "dev" ? "none" : "lax",
-      maxAge: AUTH_CONSTANTS.SEVEN_DAYS_VALUE,
-    });
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getRefreshTokenCookieOptions()
+    );
 
     res.status(200).json({
       message: "Google login successful",
