@@ -247,7 +247,8 @@ export const verifyPayment = async (
       // 8. Post-order processing (Non-blocking)
       (async () => {
         try {
-          const orderLink = `${process.env.FRONTEND_BASE_URL}/profile/orders/${newOrder.id}`;
+          const frontendUrl = req.headers.origin || process.env.FRONTEND_BASE_URL || "http://localhost:8080";
+          const orderLink = `${frontendUrl}/profile/orders/${newOrder.id}`;
           const estimatedDelivery = new Date(
             Date.now() + 3 * 24 * 60 * 60 * 1000
           ).toLocaleDateString();

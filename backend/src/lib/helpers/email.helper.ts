@@ -222,6 +222,28 @@ export const getPasswordResetEmail = (resetUrl: string) => {
   return { html, text };
 };
 
+export const getPasswordResetOtpEmail = (otp: string) => {
+  const html = `
+    <div style="background:#f4eede;padding:32px 0;min-height:100vh;font-family:'Playfair Display', 'Cormorant Garamond', serif;">
+      <div style="max-width:480px;margin:0 auto;background:#fcfbf8;border-radius:16px;border:1px solid #d4a341;box-shadow:0 2px 12px #0001;padding:32px 24px 24px 24px;color:#3d2b1f;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <span style="display:inline-block;font-size:2rem;font-weight:700;color:#d4a341;letter-spacing:1px;font-family:'Playfair Display', serif;">${APP_NAME}</span>
+        </div>
+        <h2 style="color:#d4a341;margin-bottom:8px;font-family:'Playfair Display', serif;">Password Reset Request</h2>
+        <p style="font-size:1.1rem;margin-bottom:16px;">Your password reset verification code is:</p>
+        <div style="text-align:center;margin:32px 0;">
+          <span style="font-size:2.5rem;font-weight:700;color:#d4a341;letter-spacing:4px;font-family:monospace;">${otp}</span>
+        </div>
+        <p style="color:#897a6f;font-size:0.97rem;margin-bottom:24px;">This code will expire in 15 minutes.</p>
+        <p style="color:#897a6f;font-size:0.97rem;margin-bottom:0;">If you did not request this, please ignore this email.</p>
+      </div>
+    </div>
+  `;
+  const text = `Your password reset verification code is ${otp}. It will expire in 15 minutes. If you did not request this, please ignore this email.`;
+  return { html, text };
+};
+
+
 export const getOtpEmail = (otp: string) => {
   const html = `
     <div style="background:#f4eede;padding:32px 0;min-height:100vh;font-family:'Playfair Display', 'Cormorant Garamond', serif;">

@@ -8,6 +8,7 @@ import {
   resetPassword,
   sendEmailVerificationOtp,
   verifyEmail,
+  verifyResetOtp,
   googleLogin,
 } from "@/controllers/auth.controller";
 import { loginSchema, signupSchema } from "@/lib/schemas/auth.schema";
@@ -23,5 +24,6 @@ router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 router.post("/send-otp", sendEmailVerificationOtp);
 router.post("/verify-email", verifyEmail);
+router.post("/verify-reset-otp", verifyResetOtp);
 router.post("/google", googleLogin);
 export { router as authRouter };
