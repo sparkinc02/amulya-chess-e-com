@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 
 interface VerifyEmailRequest { otp: string; token: string; }
 interface ForgotPasswordRequest { email: string; }
-interface ResetPasswordRequest { newPassword: string; token: string; otp?: string; }
+interface ResetPasswordRequest { newPassword: string; token: string; }
 interface SendVerificationEmailRequest { email: string; }
 export interface VerifyEmailResponse { email: string; }
 export interface SendOtpResponse { otpToken: string; }
@@ -35,10 +35,7 @@ const sendVerificationEmail = async (data: SendVerificationEmailRequest) => {
   return response.data;
 };
 const resetPassword = async (data: ResetPasswordRequest) => {
-  const response = await api.post<ApiResponse<void>>(`/auth/reset-password/${data.token}`, { 
-    newPassword: data.newPassword, 
-    otp: data.otp 
-  });
+  const response = await api.post<ApiResponse<void>>(`/auth/reset-password/${data.token}`, { newPassword: data.newPassword });
   return response.data;
 };
 const verifyEmailCode = async (data: VerifyEmailRequest) => {
@@ -46,13 +43,7 @@ const verifyEmailCode = async (data: VerifyEmailRequest) => {
   return response.data;
 };
 export const forgotPassword = async (data: ForgotPasswordRequest) => {
-  const response = await api.post<ApiResponse<{ token?: string }>>("/auth/forgot-password", data);
-  return response.data;
-};
-
-interface VerifyResetOtpRequest { otp: string; token: string; }
-export const verifyResetOtp = async (data: VerifyResetOtpRequest) => {
-  const response = await api.post<ApiResponse<void>>("/auth/verify-reset-otp", data);
+  const response = await api.post<ApiResponse<void>>("/auth/forgot-password", data);
   return response.data;
 };
 
@@ -65,4 +56,3 @@ export const useSendVerificationEmail = () => useMutation({ mutationFn: sendVeri
 export const useVerifyEmail = () => useMutation({ mutationFn: verifyEmailCode });
 export const useForgotPassword = () => useMutation({ mutationFn: forgotPassword });
 export const useResetPassword = () => useMutation({ mutationFn: resetPassword });
-export const useVerifyResetOtp = () => useMutation({ mutationFn: verifyResetOtp });

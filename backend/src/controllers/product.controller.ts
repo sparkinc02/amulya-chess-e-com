@@ -6,14 +6,43 @@ import {
 import type { Request, Response } from "express";
 import { isValidObjectId } from "@/lib/helpers/common.helper";
 import { prisma } from "@/config/data-source";
+import { verifyToken } from "@/lib/helpers/auth.helper";
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
+    let all = req.query.all === "true";
+    if (all) {
+      let isAdmin = false;
+      const token = req.headers.authorization?.split(" ")[1];
+      if (token) {
+        try {
+          const decoded = verifyToken(token);
+          if (decoded && !decoded.error && decoded.id) {
+            const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+            if (user && user.role === "admin") {
+              isAdmin = true;
+            }
+          }
+        } catch (err) {
+          // Ignore invalid token
+        }
+      }
+      if (!isAdmin) {
+        all = false;
+      }
+    }
+
     let products;
+    let whereClause: any = {};
+    if (!all) {
+      whereClause.active = true;
+    }
+
     if (req.query.query) {
       const query = req.query.query as string;
       products = await prisma.product.findMany({
         where: {
+          ...whereClause,
           OR: [
             { name: { contains: query, mode: "insensitive" } },
             { description: { contains: query, mode: "insensitive" } },
@@ -23,14 +52,24 @@ export const getAllProducts = async (req: Request, res: Response) => {
         },
       });
     } else if (req.query.isFeatured) {
-      products = await prisma.product.findMany({ where: { isFeatured: true } });
+      products = await prisma.product.findMany({
+        where: {
+          ...whereClause,
+          isFeatured: true,
+        },
+      });
     } else if (req.query.category) {
       const category = req.query.category as string;
       products = await prisma.product.findMany({
-        where: { category: category },
+        where: {
+          ...whereClause,
+          category: category,
+        },
       });
     } else {
-      products = await prisma.product.findMany();
+      products = await prisma.product.findMany({
+        where: whereClause,
+      });
     }
     res.status(200).json({
       message: "Products fetched successfully.",
@@ -378,9 +417,32 @@ export const deleteProduct = async (req: Request, res: Response) => {
     return;
   }
 };
-export const getCategories = async (_req: Request, res: Response) => {
+export const getCategories = async (req: Request, res: Response) => {
   try {
+    let all = req.query.all === "true";
+    if (all) {
+      let isAdmin = false;
+      const token = req.headers.authorization?.split(" ")[1];
+      if (token) {
+        try {
+          const decoded = verifyToken(token);
+          if (decoded && !decoded.error && decoded.id) {
+            const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+            if (user && user.role === "admin") {
+              isAdmin = true;
+            }
+          }
+        } catch (err) {
+          // Ignore invalid token
+        }
+      }
+      if (!isAdmin) {
+        all = false;
+      }
+    }
+
     const categories = await prisma.product.findMany({
+      where: all ? {} : { active: true },
       select: {
         category: true,
       },

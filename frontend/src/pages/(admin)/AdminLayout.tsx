@@ -83,7 +83,7 @@ export const AdminLayout = () => {
       label: "Products",
       icon: Package,
       to: "/admin/products",
-      active: pathname.includes("/admin/products"),
+      active: pathname === "/admin" || pathname === "/admin/" || pathname.includes("/admin/products"),
     },
     {
       label: "Orders",

@@ -50,7 +50,7 @@ export default function Footer() {
         </div>
 
         {/* Quick Links */}
-        <div>
+        {/* <div>
           <h4 className="font-heading text-sm font-bold mb-4">Quick Links</h4>
           <ul className="space-y-2">
             {quickLinks.map((link) => (
@@ -64,7 +64,7 @@ export default function Footer() {
               </li>
             ))}
           </ul>
-        </div>
+        </div> */}
 
         {/* Contact */}
         <div>

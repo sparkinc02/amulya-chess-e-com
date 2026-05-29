@@ -8,7 +8,7 @@ import {
 } from "./constants";
 
 const getProducts = async () => {
-  const response = await api.get<ApiResponse<Product[]>>("/products");
+  const response = await api.get<ApiResponse<Product[]>>("/products?all=true");
   return response.data;
 };
 const getFeaturedProducts = async () => {

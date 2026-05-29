@@ -15,7 +15,6 @@ import jwt from "jsonwebtoken";
 import {
   sendEmail,
   getPasswordResetEmail,
-  getPasswordResetOtpEmail,
   getOtpEmail,
 } from "@/lib/helpers/email.helper";
 import { OAuth2Client } from "google-auth-library";
@@ -291,28 +290,26 @@ export const forgotPassword = async (req: Request, res: Response) => {
       return;
     }
 
-    // 1. Generate JWT token (expires in 15 mins) with email and OTP
+    // 1. Generate JWT token (expires in 15 mins)
     if (!process.env.JWT_SECRET) {
       res.status(500).json({
         message: "Server configuration error: JWT secret missing.",
       });
       return;
     }
-    
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
-    const token = jwt.sign({ email: user.email, otp }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
       expiresIn: "15m",
     });
 
-    const { html, text } = getPasswordResetOtpEmail(otp);
+    // 2. Construct reset URL (using dynamic fallback)
+    const frontendBaseUrl = req.headers.origin || process.env.FRONTEND_BASE_URL || "http://localhost:8080";
+    const resetUrl = `${frontendBaseUrl}/reset-password/${token}`;
+    const { html, text } = getPasswordResetEmail(resetUrl);
     
-    // 2. Send email
+    // 3. Send email
     try {
-      await sendEmail({ to: email, subject: "Password Reset - Amulya Chess", text, html });
-      res.json({ 
-        message: "Reset code sent to your email.", 
-        data: { token } 
-      });
+      await sendEmail({ to: email, subject: "Reset Your Password", text, html });
+      res.json({ message: "Reset link sent to your email." });
     } catch (emailError: any) {
       console.error("[ForgotPassword] Error sending email:", emailError);
       res.status(500).json({ 
@@ -333,7 +330,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const token = req.params.token;
-    const { newPassword, otp } = req.body;
+    const { newPassword } = req.body;
 
     if (!token || !newPassword) {
       res.status(400).json({ message: "Token and new password required." });
@@ -351,18 +348,6 @@ export const resetPassword = async (req: Request, res: Response) => {
     if (typeof decoded === "object" && "error" in decoded) {
       res.status(decoded.statusCode).json({ message: decoded.error });
       return;
-    }
-
-    // Verify OTP if present in decoded token
-    if (decoded.otp) {
-      if (!otp) {
-        res.status(400).json({ message: "Reset code is required." });
-        return;
-      }
-      if (String(decoded.otp) !== String(otp)) {
-        res.status(400).json({ message: "Invalid or incorrect reset code." });
-        return;
-      }
     }
 
     // 2. Find user by email
@@ -497,42 +482,6 @@ export const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
-export const verifyResetOtp = async (req: Request, res: Response) => {
-  try {
-    const { otp, token } = req.body;
-    if (!otp || !token) {
-      res.status(400).json({
-        message: "Reset code and token are required",
-      });
-      return;
-    }
-
-    const decoded = verifyToken(token);
-    if (typeof decoded === "object" && "error" in decoded) {
-      res.status(decoded.statusCode).json({
-        message: decoded.error,
-      });
-      return;
-    }
-
-    if (String(decoded.otp) !== String(otp)) {
-      res.status(400).json({
-        message: "Invalid or incorrect reset code",
-      });
-      return;
-    }
-
-    res.status(200).json({
-      message: "Reset code verified successfully.",
-    });
-    return;
-  } catch (err) {
-    res.status(400).json({
-      message: "Reset code expired or invalid",
-    });
-    return;
-  }
-};
 
 export const googleLogin = async (req: Request, res: Response) => {
   try {

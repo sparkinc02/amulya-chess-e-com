@@ -13,7 +13,7 @@ export const BUSINESS_CONFIG = {
     shippingCost: 0, // Currently set to 0 as per requirements
   },
   support: {
-    email: "hello@chesscraftindia.com",
+    email: "support@amulyachessproducts.in",
     phone: "+91 98765 43210",
     whatsapp: "919876543210",
     address: "42, Chess Lane, T. Nagar, Chennai – 600017, Tamil Nadu, India",

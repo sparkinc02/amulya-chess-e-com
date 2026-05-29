@@ -45,8 +45,7 @@ export const sendEmail = async ({
     `[Email] Request to send email to ${to} with subject: "${subject}"`,
   );
 
-  // --- RESEND (READY FOR FUTURE USE) ---
-  /* 
+  // --- RESEND (ACTIVE) ---
   if (resend) {
     try {
       const { data, error } = await resend.emails.send({
@@ -69,7 +68,6 @@ export const sendEmail = async ({
       console.error("[Email] Resend failed, using fallback...", err);
     }
   }
-  */
 
   // --- NODEMAILER (ACTIVE) ---
   try {

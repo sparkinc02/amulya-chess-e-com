@@ -44,7 +44,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { productSchema } from "@/lib/schemas/product.schema";
 
-type ProductFormData = z.infer<typeof productSchema>
+type ProductFormData = z.infer<typeof productSchema>;
 
 interface CreateAndUpdateProductDialogProps {
   open: boolean;
@@ -144,7 +144,9 @@ const CreateAndUpdateProductDialog = ({
       });
       if (editingProduct.images && editingProduct.images.length > 0) {
         const existingFiles = editingProduct.images.map((url, index) => {
-          const mockFile = new File([], `image-${index + 1}.jpg`, { type: "image/jpeg" });
+          const mockFile = new File([], `image-${index + 1}.jpg`, {
+            type: "image/jpeg",
+          });
           const imageFile = mockFile as ImageFile;
           imageFile.preview = url;
           imageFile.progress = 100;
@@ -244,7 +246,6 @@ const CreateAndUpdateProductDialog = ({
             setRootError("Something went wrong. Please try again.");
           },
           onSuccess: (response) => {
-
             reset();
             setFiles([]);
             setRootError("");
@@ -269,7 +270,6 @@ const CreateAndUpdateProductDialog = ({
           setRootError("Something went wrong. Please try again.");
         },
         onSuccess: (response) => {
-
           reset();
           setFiles([]);
           setRootError("");
@@ -278,8 +278,6 @@ const CreateAndUpdateProductDialog = ({
       });
     }
   };
-
-
 
   const onInvalid = () => {
     // Switch to the tab with errors when form is invalid
@@ -318,7 +316,6 @@ const CreateAndUpdateProductDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -406,7 +403,12 @@ const CreateAndUpdateProductDialog = ({
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent side="bottom" position="popper" sideOffset={4} className="max-h-[220px]">
+                          <SelectContent
+                            side="bottom"
+                            position="popper"
+                            sideOffset={4}
+                            className="max-h-[220px]"
+                          >
                             {Object.entries(categories).map(
                               ([key, category]) => (
                                 <SelectItem key={key} value={key}>
@@ -439,7 +441,12 @@ const CreateAndUpdateProductDialog = ({
                               <SelectValue placeholder="Select subcategory" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent side="bottom" position="popper" sideOffset={4} className="max-h-[220px]">
+                          <SelectContent
+                            side="bottom"
+                            position="popper"
+                            sideOffset={4}
+                            className="max-h-[220px]"
+                          >
                             {subcategories.map((subcategory) => (
                               <SelectItem key={subcategory} value={subcategory}>
                                 {subcategory}
@@ -485,14 +492,17 @@ const CreateAndUpdateProductDialog = ({
                       <FormItem>
                         <FormLabel>Original Price (₹) *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="text" 
-                            placeholder="0" 
+                          <Input
+                            type="text"
+                            placeholder="0"
                             value={field.value}
                             onChange={(e) => {
-                              const value = e.target.value.replace(/[^\d.]/g, "");
+                              const value = e.target.value.replace(
+                                /[^\d.]/g,
+                                "",
+                              );
                               // Allow only one decimal point
-                              const parts = value.split('.');
+                              const parts = value.split(".");
                               if (parts.length > 2) return;
                               field.onChange(value);
                             }}
@@ -511,14 +521,17 @@ const CreateAndUpdateProductDialog = ({
                       <FormItem>
                         <FormLabel>Selling Price (₹) *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="text" 
-                            placeholder="0" 
+                          <Input
+                            type="text"
+                            placeholder="0"
                             value={field.value}
                             onChange={(e) => {
-                              const value = e.target.value.replace(/[^\d.]/g, "");
+                              const value = e.target.value.replace(
+                                /[^\d.]/g,
+                                "",
+                              );
                               // Allow only one decimal point
-                              const parts = value.split('.');
+                              const parts = value.split(".");
                               if (parts.length > 2) return;
                               field.onChange(value);
                             }}
@@ -537,9 +550,9 @@ const CreateAndUpdateProductDialog = ({
                       <FormItem>
                         <FormLabel>Stock Quantity *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="text" 
-                            placeholder="0" 
+                          <Input
+                            type="text"
+                            placeholder="0"
                             value={field.value}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, "");
@@ -629,7 +642,7 @@ const CreateAndUpdateProductDialog = ({
                   )}
                 />
 
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="isFeatured"
                   render={({ field }) => (
@@ -650,7 +663,7 @@ const CreateAndUpdateProductDialog = ({
                       </FormControl>
                     </FormItem>
                   )}
-                />
+                /> */}
               </TabsContent>
 
               <TabsContent value="media" className="space-y-4 mt-4 border-none">

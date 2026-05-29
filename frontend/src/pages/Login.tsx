@@ -9,7 +9,6 @@ import {
   useGoogleLoginUser,
   useForgotPassword,
   useResetPassword,
-  useVerifyResetOtp,
 } from "@/features/auth/authService";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
@@ -36,7 +35,6 @@ export default function Login() {
   const googleLoginMutation = useGoogleLoginUser();
   const forgotMutation = useForgotPassword();
   const resetMutation = useResetPassword();
-  const verifyResetOtpMutation = useVerifyResetOtp();
   const { token } = useParams();
   const [view, setView] = useState<View>("login");
 
@@ -50,8 +48,6 @@ export default function Login() {
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState("");
   const [shakeOtp, setShakeOtp] = useState(false);
-  const [resetToken, setResetToken] = useState("");
-  const [isOtpVerified, setIsOtpVerified] = useState(false);
 
   const {
     register,
@@ -64,8 +60,7 @@ export default function Login() {
     loginMutation.isPending ||
     googleLoginMutation.isPending ||
     forgotMutation.isPending ||
-    resetMutation.isPending ||
-    verifyResetOtpMutation.isPending;
+    resetMutation.isPending;
 
   const onLogin = async (data: LoginForm) => {
     loginMutation.mutate(data, {
@@ -90,12 +85,9 @@ export default function Login() {
     forgotMutation.mutate(
       { email: resetEmail },
       {
-        onSuccess: (res: any) => {
-          toast.success(`Reset code sent to ${resetEmail}`);
-          if (res?.data?.token) {
-            setResetToken(res.data.token);
-          }
-          setView("forgot-reset");
+        onSuccess: () => {
+          toast.success(`Reset link sent to ${resetEmail}`);
+          setView("login");
         },
         onError: (err) => {
           toast.error(err.message || "Failed to send reset link");
@@ -111,17 +103,13 @@ export default function Login() {
       });
       return;
     }
-    const finalToken = token || resetToken;
-    if (!finalToken) {
+    const resetToken = token || otp;
+    if (!resetToken) {
       setOtpError("Reset token or code is missing");
       return;
     }
     resetMutation.mutate(
-      { 
-        token: finalToken, 
-        newPassword: data.newPassword, 
-        otp: token ? undefined : otp 
-      },
+      { token: resetToken, newPassword: data.newPassword },
       {
         onSuccess: () => {
           toast.success("Password reset successfully!");
@@ -129,8 +117,6 @@ export default function Login() {
           setOtp("");
           setOtpError("");
           setResetEmail("");
-          setResetToken("");
-          setIsOtpVerified(false);
         },
         onError: (err) => {
           setOtpError(err.message || "Incorrect OTP. Try again.");
@@ -138,28 +124,6 @@ export default function Login() {
           setTimeout(() => setShakeOtp(false), 600);
         },
       },
-    );
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-      setOtpError("Please enter a 6-digit code.");
-      return;
-    }
-    verifyResetOtpMutation.mutate(
-      { token: resetToken, otp },
-      {
-        onSuccess: () => {
-          setIsOtpVerified(true);
-          setOtpError("");
-          toast.success("Code verified! Set your new password.");
-        },
-        onError: (err: any) => {
-          setOtpError(err.message || "Invalid or expired code.");
-          setShakeOtp(true);
-          setTimeout(() => setShakeOtp(false), 600);
-        },
-      }
     );
   };
 
@@ -374,13 +338,14 @@ export default function Login() {
                 Set New Password
               </h1>
               <p className="font-body text-muted-foreground mb-8">
-                {token || isOtpVerified 
-                  ? "Set a secure new password for your account." 
-                  : `Enter the 6-digit code sent to ${resetEmail}`}
+                Enter the 6-digit code sent to {resetEmail}
               </p>
 
-              {!token && !isOtpVerified ? (
-                <div className="space-y-5">
+              <form
+                onSubmit={resetForm.handleSubmit(handleResetPassword)}
+                className="space-y-5"
+              >
+                {!token && (
                   <div>
                     <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3 block">
                       Reset Code
@@ -399,86 +364,71 @@ export default function Login() {
                       </p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={loading}
-                    className="w-full py-4 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
-                  >
-                    {loading ? "Verifying..." : "Verify Code"}
-                  </button>
-                </div>
-              ) : (
-                <form
-                  onSubmit={resetForm.handleSubmit(handleResetPassword)}
-                  className="space-y-5"
-                >
-                  <div>
-                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                      New Password
-                    </label>
-                    <input
-                      {...resetForm.register("newPassword", {
-                        required: "Password is required",
-                        minLength: { value: 6, message: "Min 6 characters" },
-                      })}
-                      type="password"
-                      className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors"
-                    />
-                    {newPw && (
-                      <div className="mt-2">
-                        <div className="h-1 bg-border overflow-hidden">
-                          <div
-                            className={`h-full ${strength.color} transition-all duration-300`}
-                            style={{ width: strength.width }}
-                          />
-                        </div>
-                        <p className="font-mono text-[10px] text-muted-foreground mt-1">
-                          {strength.label}
-                        </p>
+                )}
+
+                <div>
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
+                    New Password
+                  </label>
+                  <input
+                    {...resetForm.register("newPassword", {
+                      required: "Password is required",
+                      minLength: { value: 6, message: "Min 6 characters" },
+                    })}
+                    type="password"
+                    className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors"
+                  />
+                  {newPw && (
+                    <div className="mt-2">
+                      <div className="h-1 bg-border overflow-hidden">
+                        <div
+                          className={`h-full ${strength.color} transition-all duration-300`}
+                          style={{ width: strength.width }}
+                        />
                       </div>
-                    )}
-                    {resetForm.formState.errors.newPassword && (
-                      <p className="font-mono text-[10px] text-destructive mt-1">
-                        {resetForm.formState.errors.newPassword.message}
+                      <p className="font-mono text-[10px] text-muted-foreground mt-1">
+                        {strength.label}
                       </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                  {resetForm.formState.errors.newPassword && (
+                    <p className="font-mono text-[10px] text-destructive mt-1">
+                      {resetForm.formState.errors.newPassword.message}
+                    </p>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                      Confirm Password
-                    </label>
-                    <input
-                      {...resetForm.register("confirmPassword", {
-                        required: "Confirm your password",
-                      })}
-                      type="password"
-                      className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors"
-                    />
-                    {resetForm.formState.errors.confirmPassword && (
-                      <p className="font-mono text-[10px] text-destructive mt-1">
-                        {resetForm.formState.errors.confirmPassword.message}
-                      </p>
-                    )}
-                  </div>
+                <div>
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
+                    Confirm Password
+                  </label>
+                  <input
+                    {...resetForm.register("confirmPassword", {
+                      required: "Confirm your password",
+                    })}
+                    type="password"
+                    className="w-full px-4 py-3.5 bg-card border border-border font-body text-foreground focus:border-primary focus:outline-none transition-colors"
+                  />
+                  {resetForm.formState.errors.confirmPassword && (
+                    <p className="font-mono text-[10px] text-destructive mt-1">
+                      {resetForm.formState.errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-4 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
-                  >
-                    {loading ? "Resetting..." : "Reset Password"}
-                  </button>
-                </form>
-              )}
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-secondary text-secondary-foreground font-mono text-xs uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  Reset Password
+                </button>
+              </form>
 
               <button
                 onClick={() => {
                   setView("forgot-email");
                   setOtp("");
                   setOtpError("");
-                  setIsOtpVerified(false);
                 }}
                 className="flex items-center gap-2 font-mono text-xs text-muted-foreground hover:text-primary mt-6"
               >
